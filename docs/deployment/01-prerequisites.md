@@ -1,5 +1,18 @@
 # Prerequisites
 
+## Automated Check
+
+Run the prerequisites script to validate everything at once:
+
+```bash
+bash scripts/deploy/phase1-prereqs.sh
+```
+
+This checks tooling, Python, Node.js, `.env` completeness, deployer ETH balance,
+and that `forge test` passes. Fix any `[FAIL]` items before deploying.
+
+---
+
 ## Tooling
 
 ### Foundry

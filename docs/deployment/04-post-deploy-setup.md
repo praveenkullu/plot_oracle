@@ -23,6 +23,27 @@ These operations cannot run autonomously — they require off-chain triggers:
 
 ---
 
+## Keeper Scripts (Interim / Fallback)
+
+Until Chainlink Automation is set up, run keepers directly:
+
+```bash
+# Daily (cron: 0 0 * * *)
+bash scripts/keepers/record-snapshots.sh --network base_mainnet --interval 24h
+
+# Weekly (cron: 0 0 * * 0)
+bash scripts/keepers/record-snapshots.sh --network base_mainnet --interval 7d
+
+# Every 5 min (cron: */5 * * * *)
+bash scripts/keepers/finalize-claims.sh --network base_mainnet --max-claims 50
+```
+
+Requires `OPERATOR_PRIVATE_KEY` in `.env`. The finalize script iterates backwards from
+the latest claim, checks for expired unchallenged windows, and calls
+`finalizeUnchallenged()` + `releaseSubmitterBond()` in sequence.
+
+---
+
 ## Chainlink Automation (Recommended)
 
 For production, use Chainlink Automation to trigger keeper functions automatically.

@@ -1,3 +1,52 @@
+To run the testnet deployment, you need a .env file first:                                                                                                                                  
+                                                                                                                                                                                        
+cp .env.example .env                                                                                                                                                                        
+                                                                                                                                                                                        
+Then fill in at minimum these fields:                                                                               
+                                                                                                                                                                                    
+┌─────────────────────────┬────────────────────────────────────────────────────────────────────────────────────┐                                                                            
+│        Variable         │                                    What to set                                     │
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ PRIVATE_KEY             │ Deployer EOA private key (no 0x prefix)                                            │    
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                          
+│ ADMIN_ADDRESS           │ Any EOA is fine for testnet (multisig required for mainnet)                        │                                                                            
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ FOUNDATION_ADDRESS      │ Same — any EOA for testnet                                                         │                                                                            
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ TREASURY_WALLET         │ Address that will receive 200M PLOT                                                │                                                                          
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ VOTER_POOL_ADDRESS      │ Any address for testnet                                                            │    
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ CHAINLINK_PLOT_USD_FEED │ Use ETH/USD placeholder: 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1 (Base Sepolia) │    
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ BASESCAN_API_KEY        │ From basescan.org (free)                                                           │    
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ SNS_ORACLE_WALLET       │ Any address you control                                                            │    
+├─────────────────────────┼────────────────────────────────────────────────────────────────────────────────────┤                                                                            
+│ OPERATOR_WALLET         │ Any address you control                                                            │    
+└─────────────────────────┴────────────────────────────────────────────────────────────────────────────────────┘                                                                            
+                                                                                                                
+Once .env is ready, the full testnet sequence is:                                                                                                                                           
+
+# Phase 1: validate prerequisites                                                                                                                                                           
+bash scripts/deploy/phase1-prereqs.sh                                                                               
+                                                                                                                                                                                        
+# Phase 2: deploy contracts (dry-run first)                                                                                                                                                 
+bash scripts/deploy/phase2-deploy-contracts.sh --network base_sepolia                                                                                                                       
+                                                                                                                                                                                        
+# Phase 2: deploy contracts (broadcast to chain)                                                                    
+bash scripts/deploy/phase2-deploy-contracts.sh --network base_sepolia --broadcast                                                                                                           
+                                                                                                                                                                                        
+# Phase 3: wire roles (broadcast)      
+bash scripts/deploy/phase3-wire-roles.sh --network base_sepolia --broadcast                                                                                                                 
+                                                                                                                                                                                        
+# Smoke test: verify invariants        
+bash scripts/deploy/smoke-test.sh --network base_sepolia                                                                                                                                    
+                                                                                                                                                                                        
+# Phase 4: start services              
+bash scripts/deploy/phase4-services.sh --network base_sepolia
+
+
 Deployer Wallet                                                                                                                                                                           
                                                                                                                                                                                             
 PRIVATE_KEY                                                                                                                                                                               
