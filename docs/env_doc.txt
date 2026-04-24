@@ -1,0 +1,355 @@
+Deployer Wallet                                                                                                                                                                           
+                                                                                                                                                                                            
+PRIVATE_KEY                                                                                                                                                                               
+                                                                                                                                                                                            
+What: Private key of the EOA (externally owned account) that pays gas and signs all deployment transactions.                                                                      
+Why: Every forge script --broadcast and cast send uses this to sign txns.                                                                                      
+How to get: Export from MetaMask → Account Details → Export Private Key. Strip the 0x prefix.                                                                                           
+Value: 64-char hex string. Example: ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80                                                                              
+                                                                                                                                                                
+▎ Fund it with Base Sepolia ETH from: https://faucet.quicknode.com/base/sepolia                                                                                                         
+                                                                                                                                                                                    
+---                                                                                                                                                            
+Protocol Addresses                                                                                                                                                                      
+                                                                                                                                                                                    
+ADMIN_ADDRESS                                                                                                                                                  
+                                                                                                                                                                                        
+What: Address that receives DEFAULT_ADMIN_ROLE on all 13 contracts after deployment.                                                                                              
+Why: This is the ultimate controller — can grant/revoke all other roles. On mainnet it MUST be a Gnosis Safe so no single person can act alone.                
+Testnet: Any address you control (can be same as deployer).                                                                                                                             
+Mainnet: A Gnosis Safe multisig. Create at https://safe.global                                                                                                                    
+                                                                                                                                                                
+FOUNDATION_ADDRESS                                                                                                                                                                      
+                                                                                                                                                                                    
+What: Address that receives the treasury veto power for the first 2 years.                                                                                     
+Why: The Treasury contract has a vetoExpiresAt that gives this address blocking power on large fund movements during the protocol's early life — a safety net.                          
+Testnet: Any address you control.                                                                                                                                                 
+Mainnet: A separate 3-of-5 Gnosis Safe (separate from ADMIN for separation of powers).
+
+TREASURY_WALLET                                                                                                                                                                           
+                                                                                                                                                                                              
+What: Address that receives 200,000,000 PLOT tokens at deploy time.                                                                                                                       
+Why: Deploy.s.sol calls PLOTToken.mint(TREASURY_WALLET, 200_000_000e18) right after deploying the token. This is the protocol's operational treasury.                             
+Value: Any address you control. On mainnet, this should be a multisig or the Treasury contract address itself (post-deploy bootstrapping).                     
+                                                                                                                                                                                        
+VOTER_POOL_ADDRESS                                                                                                                                                                
+                                                                                                                                                                
+What: Address that receives 20% of slashed bonds when a dispute is resolved.                                                                                                            
+Why: When a false claim is challenged and slashed, the protocol splits the bond: 80% to challenger, 20% to a voter incentive pool. This is where that 20% goes.                   
+Testnet: Any address you control.                                                                                                                              
+Mainnet: A governance-controlled rewards distributor contract.                                                                                                                          
+                                                                                                                                                                                    
+---                                                                                                                                                            
+Chainlink                                                                                                                                                                               
+                                                                                                                                                                                    
+CHAINLINK_PLOT_USD_FEED                                                                                                                                        
+                                                                                                                                                                                        
+What: Address of the Chainlink price feed that EmissionController reads to calculate PLOT's USD price.                                                                            
+Why: The emission circuit breaker compares current price to 24h/7d snapshots. If price drops >50% in 7 days, it pauses minting. It needs a reliable on-chain price source.
+Testnet value: Use the ETH/USD feed on Base Sepolia as a placeholder:                                                                                                                   
+0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1                                                                                                                                        
+Mainnet: After PLOTToken is deployed and listed, register a PLOT/USD feed at https://data.chain.link. Until then use the ETH/USD placeholder: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70
+                                                                                                                                                                                        
+---
+SNS_ORACLE_WALLET                                                                                                                                                                         
+                                                                                                                                                                                              
+What: Public address of the wallet used by the FastAPI SNS (Semantic Novelty Service) to submit novelty scores on-chain.                                                                  
+Why: NoveltyGate contract only accepts novelty results from addresses with SNS_ORACLE_ROLE. This address gets that role during phase3-wire-roles.sh.                              
+How to create: Generate a dedicated wallet in MetaMask or cast wallet new. Use the public address here.                                                                                 
+                                                                                                                                                                                    
+SNS_ORACLE_PRIVATE_KEY                                                                                                                                                            
+                                                                                                                                                                                    
+What: Private key of the SNS oracle wallet above.                                                                                                                                       
+Why: The FastAPI service uses this to sign and send submitNoveltyResult() transactions automatically.                                                                             
+Security: In production, store this in AWS Secrets Manager or HashiCorp Vault — never commit it.                                                                                        
+Value: The private key corresponding to SNS_ORACLE_WALLET.                                                                                                                              
+                                                                                                                                                                                
+OPERATOR_WALLET                                                                                                                                                                         
+                                                                                                                                                                                    
+What: Public address of the keeper/operator wallet.                                                                                                                               
+Why: Gets OPERATOR_ROLE on EmissionController. This role is required to call recordSnapshot24h(), recordSnapshot7d(), and mintEmission().                                               
+How to create: Another dedicated wallet, separate from deployer. Keep it funded with ETH for gas.                                                                                       
+                                                                                                                                                                                
+OPERATOR_PRIVATE_KEY                                                                                                                                                                    
+                                                                                                                                                                                    
+What: Private key of the operator wallet.                                                                                                                                         
+Why: The keeper scripts (record-snapshots.sh, finalize-claims.sh) use this to sign keeper transactions automatically via cast send.                                                     
+Value: Private key corresponding to OPERATOR_WALLET.                                                                                                                                    
+                                                                                                                                                                                
+---
+RPC Endpoints                                                                                                                                                                             
+                                                                                                                                                                                    
+BASE_RPC_URL                                                                                                                                                                            
+                                                                                                                                                                                        
+What: HTTP RPC endpoint for Base network (Sepolia or Mainnet).                                                                                                                    
+Why: All cast and forge commands need an RPC to read chain state and broadcast transactions.                                                                                            
+Testnet default: https://sepolia.base.org (public, rate-limited)                                                                                                                        
+Mainnet: Use a private RPC from Alchemy/Infura/QuickNode for reliability. Example: https://base-mainnet.g.alchemy.com/v2/YOUR_KEY                                                 
+                                                                                                                                                                                        
+---                                                                                                                                                                                     
+BaseScan                                                                                                                                                                          
+                                                                                                                                                                                        
+BASESCAN_API_KEY                                                                                                                                                                        
+                                                                                                                                                                                    
+What: API key for the BaseScan block explorer.                                                                                                                                          
+Why: forge script --verify automatically submits deployed contract source code to BaseScan for public verification. Without this, verification fails silently.                          
+How to get: Register free at https://basescan.org/register → API Keys → Create new key.                                                                                           
+Value: A string like ABC123DEF456GHI789                                                                                                                                                 
+                                                                                                                                                                                        
+---
+USDC Addresses                                                                                                                                                                            
+                                                                                                                                                                                        
+USDC_ADDRESS                                                                                                                                                                      
+                                                                                                                                                                                    
+What: Address of the USDC token contract on the target network.                                                                                                                         
+Why: BondEscrow accepts USDC as bond collateral. It needs to know which token is USDC.                                                                                            
+Testnet default: 0x036CbD53842c5426634e7929541eC2318f3dCF7e (Circle's official Base Sepolia test USDC — pre-set in .env.example)                                                        
+Mainnet: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 (official USDC on Base)                                                                                                             
+                                                                                                                                                                                
+---                                                                                                                                                                                     
+Mainnet Governor Parameters                                                                                                                                                             
+                                                                                                                                                                                
+These control the governance contract behavior. The defaults in .env.example are testnet-friendly (short periods). Change before mainnet.                                               
+                                                                                                                                                                                    
+GOVERNOR_VOTING_DELAY                                                                                                                                                             
+                                                                                                                                                                                    
+What: Blocks between proposal creation and when voting opens.                                                                                                                           
+Testnet: 86400 (~1 day at 1s/block)                                                                                                                                               
+Mainnet: 172800 (~2 days) — gives token holders time to acquire voting power before a proposal can be voted on.                                                                         
+                                                                                                                                                                                    
+GOVERNOR_VOTING_PERIOD                                                                                                                                                            
+                                                                                                                                                                                    
+What: How long voting stays open (in blocks).                                                                                                                                           
+Testnet: 604800 (~7 days)                                                                                                                                                         
+Mainnet: 1209600 (~14 days) — community needs adequate time to vote.
+
+---                                                                                                                                                                                       
+GOVERNOR_PROP_THRESHOLD                                                                                                                                                                   
+                                                                                                                                                                                            
+What it is: Minimum number of PLOT tokens an address must hold (or have delegated) to submit a governance proposal.                                                                       
+                                                                                                                                                                                            
+Why needed: Prevents governance spam. Without a threshold, anyone could flood the governance queue with proposals.                                                                        
+                                                                                                                                                                                            
+Value: 10000 (10,000 PLOT — the deploy script multiplies by 1e18 internally)                                                                                                              
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+GOVERNOR_QUORUM_NUM                                                                                                                                                                       
+                                                                                                                                                                                            
+What it is: Percentage of the total PLOT supply that must vote YES for a proposal to meet quorum.                                                                                         
+                                                                                                                                                                                            
+Why needed: Prevents low-turnout proposals from passing. If only 0.1% of holders vote, that shouldn't be enough to change the protocol.                                                   
+                                                                                                                                                                                            
+Value: 4 (meaning 4%)                                                                                                                                                                     
+                                                                                                                                                                                            
+---
+TIMELOCK_DELAY                                                                                                                                                                            
+                                                                                                                                                                                            
+What it is: Seconds between a governance proposal passing and when it becomes executable.                                                                                                 
+                                                                                                                                                                                            
+Why needed: Critical safety buffer. After a proposal passes, this window gives the community time to review the exact calldata and react (exit positions, raise alarms, coordinate an     
+emergency veto) before it actually executes. Prevents stealth governance attacks.                                                                                                         
+                                                                                                                                                                                            
+Value: 172800 (2 days in seconds)                                                                                                                                                         
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+INTERNAL_VOTE_QUORUM                                                                                                                                                                      
+                                                                                                                                                                                            
+What it is: Minimum number of distinct voters required in an InternalVote dispute round for the result to be valid.                                                                       
+                                                                                                                                                                                            
+Why needed: Prevents a single voter or two colluding voters from deciding dispute outcomes. Ensures at least some distribution of votes before a decision is finalized.                   
+                                                                                                                                                                                            
+Value: 3                                                                                                                                                                                  
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+QDRANT VECTOR DB                                                                                                                                                                          
+                                                                                                                                                                                            
+QDRANT_IN_MEMORY                                                                                                                                                                          
+                                                                                                                                                                                            
+What it is: Boolean flag that tells the SNS FastAPI service to run Qdrant entirely in RAM.                                                                                                
+                                                                                                                                                                                            
+Why needed: Qdrant is the vector database used by the SNS service to store and search semantic embeddings of claims (for novelty detection). In development, you don't want to set up     
+Docker or a separate server — the service can boot its own in-memory instance.                                                                                                            
+                                                                                                                                                                                            
+Dev: true — no Docker needed, data resets on restart
+Production: false — use a persistent Qdrant server                                                                                                                                        
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+QDRANT_HOST                                                                                                                                                                               
+                                                                                                                                                                                            
+What it is: Hostname of the Qdrant server when not running in-memory mode.                                                                                                                
+                                                                                                                                                                                            
+Default: localhost                                                                                                                                                                        
+Production: Your Qdrant Cloud hostname (e.g., xyz.eu-central.aws.cloud.qdrant.io) or Docker container hostname.                                                                           
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+QDRANT_PORT                                                                                                                                                                               
+                                                                                                                                                                                            
+What it is: Port the Qdrant HTTP API listens on.                                                                                                                                          
+                                                                                                                                                                                            
+Default: 6333 (Qdrant's standard port)                                                                                                                                                    
+Change only if: You've configured Qdrant to run on a non-standard port.                                                                                                                   
+                                                                                                                                                                                            
+---
+ARWEAVE / IRYS PERMANENT STORAGE                                                                                                                                                          
+                                                                                                                                                                                            
+IRYS_PRIVATE_KEY                                                                                                                                                                          
+                                                                                                                                                                                            
+What it is: Private key for the Irys (formerly Bundlr) wallet used to upload claim content to Arweave.                                                                                    
+                                                                                                                                                                                            
+Why needed: The SNS service uploads the full text/evidence of each claim permanently to Arweave via Irys. Only the content hash goes on-chain — the actual data lives on Arweave forever. 
+Irys requires a funded wallet to pay for storage.                                                                                                                                         
+                                                                                                                                                                                            
+How to get:                                                                                                                                                                               
+- Generate a new Arweave wallet at https://arweave.app or use arweave-js to generate one                                                                                                  
+- For devnet testing, get free tokens at https://irys.xyz/faucet                                                                                                                          
+- Export the wallet's private key (JWK format for Arweave)                                                                                                                                
+                                                                                                                                                                                            
+Note: This can also be an Ethereum private key if using Irys with EVM-compatible payment.                                                                                                 
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+IRYS_NETWORK                                                                                                                                                                              
+                                                                                                                                                                                            
+What it is: Which Irys network to upload to.                                                                                                                                              
+                                                                                                                                                                                            
+Values:                                                                                                                                                                                   
+- devnet — free uploads, data is ephemeral (not permanent), for development                                                                                                               
+- mainnet — paid uploads, data is permanent on Arweave forever                                                                                                                            
+                                                                                                                                                                                            
+Dev: devnet                                                                                                                                                                               
+Production: mainnet                                                                                                                                                                       
+                                                                                                                                                                                            
+---
+DEPLOYED CONTRACT ADDRESSES (Auto-filled)                                                                                                                                                 
+                                                                                                                                                                                            
+These 13 variables are written automatically by phase2-deploy-contracts.sh after a successful broadcast run. You only need to set them manually if you're connecting to a protocol that   
+was already deployed without the scripts.
+
+┌─────────────────────────────┬────────────────────┬───────────────────────────────────────────────────────┐                                                                              
+│          Variable           │      Contract      │                   Role in Protocol                    │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ PLOT_TOKEN_ADDRESS          │ PLOTToken          │ ERC-20 governance and utility token                   │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ BOND_CALCULATOR_ADDRESS     │ BondCalculator     │ Computes required bond amount per claim               │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ BOND_ESCROW_ADDRESS         │ BondEscrow         │ Holds USDC bonds during claim lifecycle               │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ CLAIM_REGISTRY_ADDRESS      │ ClaimRegistry      │ Central ledger of all claims and their status         │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ NOVELTY_GATE_ADDRESS        │ NoveltyGate        │ Receives and stores SNS oracle novelty scores         │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ CHALLENGE_WINDOW_ADDRESS    │ ChallengeWindow    │ Manages 72-hour challenge window per claim            │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ CONFIDENCE_SCORER_ADDRESS   │ ConfidenceScorer   │ Aggregates domain-weighted confidence scores          │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ ORACLE_ROUTER_ADDRESS       │ OracleRouter       │ Routes claims through the full verification pipeline  │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ INTERNAL_VOTE_ADDRESS       │ InternalVote       │ On-chain dispute vote mechanism                       │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ EMISSION_CONTROLLER_ADDRESS │ EmissionController │ Controls PLOT minting with Chainlink circuit breakers │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ TIMELOCK_ADDRESS            │ TimelockController │ OpenZeppelin timelock for governance execution delay  │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ GOVERNOR_ADDRESS            │ GovernorPlot       │ OpenZeppelin Governor for on-chain governance         │                                                                              
+├─────────────────────────────┼────────────────────┼───────────────────────────────────────────────────────┤                                                                              
+│ TREASURY_ADDRESS            │ Treasury           │ Protocol treasury with foundation veto power          │
+└─────────────────────────────┴────────────────────┴───────────────────────────────────────────────────────┘                                                                              
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+MAINNET ADMIN HANDOFF                                                                                                                                                                     
+                                                                                                                                                                                            
+GNOSIS_SAFE_ADDRESS                                                                                                                                                                       
+                                                                                                                                                                                            
+What it is: Address of the Gnosis Safe multisig that takes over DEFAULT_ADMIN_ROLE from the deployer EOA.                                                                                 
+                                                                                                                                                                                            
+Why needed: After deployment, the deployer EOA holds admin over all 13 contracts — this is a single point of failure. phase3-wire-roles.sh --admin-handoff grants DEFAULT_ADMIN_ROLE to   
+this Safe, after which the Safe owners must sign transactions to revoke the deployer's admin role. Once done, no single key controls the protocol.                                        
+                                                                                                                                                                                            
+When to set: Right before running admin handoff on mainnet. Not needed for testnet.                                                                                                       
+                                                                                                                                                                                            
+How to get: Create a Gnosis Safe at https://safe.global on Base Mainnet, copy its address.                                                                                                
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+QUICK START SUMMARY FOR TESTNET 
+┌─────────────────────────┬──────────────────────────────────────────────────────────┐                                                                                                    
+│        Variable         │                       What to set                        │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ PRIVATE_KEY             │ Export from MetaMask, strip 0x                           │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ ADMIN_ADDRESS           │ Your own address                                         │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ FOUNDATION_ADDRESS      │ Your own address                                         │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ TREASURY_WALLET         │ Your own address                                         │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ VOTER_POOL_ADDRESS      │ Your own address                                         │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ CHAINLINK_PLOT_USD_FEED │ 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1               │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ SNS_ORACLE_WALLET       │ cast wallet new → copy address                           │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ SNS_ORACLE_PRIVATE_KEY  │ Private key from above                                   │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ OPERATOR_WALLET         │ cast wallet new → copy address                           │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ OPERATOR_PRIVATE_KEY    │ Private key from above                                   │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ BASE_RPC_URL            │ https://sepolia.base.org (already set)                   │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ BASESCAN_API_KEY        │ Register free at basescan.org                            │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ USDC_ADDRESS            │ 0x036CbD53842c5426634e7929541eC2318f3dCF7e (already set) │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤
+│ IRYS_PRIVATE_KEY        │ Generate at arweave.app or cast wallet new               │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ IRYS_NETWORK            │ devnet (already set)                                     │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ All contract addresses  │ Leave blank — phase2 fills them                          │                                                                                                    
+├─────────────────────────┼──────────────────────────────────────────────────────────┤                                                                                                    
+│ GNOSIS_SAFE_ADDRESS     │ Leave blank — only needed for mainnet handoff            │                                                                                                    
+└─────────────────────────┴──────────────────────────────────────────────────────────┘
+
+
+______________________________________________________________________________________________________
+
+
+No. Testnet deployment is completely free.                                                                                                                                                
+                                                                                
+Here's what you need and how to get each at no cost:                                                                                                                                      
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+ETH for Gas — Free                                                                                                                                                                        
+                                                                                                                                                                                            
+Base Sepolia uses test ETH that has no real value.                                                                                                                                        
+- Faucet: https://faucet.quicknode.com/base/sepolia                                                                                                                                       
+- Also: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet                                                                                                                      
+- Get ~0.1 ETH — enough for all 13 contract deployments                                                                                                                                   
+                                                                                                                                                                                            
+USDC for Bonds — Free                                                                                                                                                                     
+                                                                                                                                                                                            
+The testnet USDC (0x036CbD53842c5426634e7929541eC2318f3dCF7e) is a test token.                                                                                                            
+- Mint free test USDC from Circle's faucet: https://faucet.circle.com                                                                                                                     
+                                                                                                                                                                                            
+BaseScan API Key — Free                                                                                                                                                                   
+                                                                                                                                                                                            
+Free account at https://basescan.org/register                                                                                                                                             
+                                                                                                                                                                                            
+Irys/Arweave Storage — Free on Devnet                                                                                                                                                     
+                                                                                                                                                                                            
+IRYS_NETWORK=devnet is free (data isn't permanent, which is fine for testing)                                                                                                             
+                                                                                                                                                                                            
+Qdrant — Free                                                                                                                                                                             
+                                                                                                                                                                                            
+QDRANT_IN_MEMORY=true runs in RAM, no Docker or paid service needed
+                                                                                                                                                                                        
+Chainlink Price Feed — Free                                                                                                                                                               
+                                                                                                                                                                                            
+You're just reading an existing public feed address, no payment needed                                                                                                                    
+                                                                                                                                                                                            
+---                                                                                                                                                                                       
+The only time you need real money is mainnet deployment:                                                                                                                                  
+- Real ETH for gas (~0.05–0.2 ETH depending on gas prices)                                                                                                                                
+- Real USDC for bonds                                                                                                                                                                     
+- Irys mainnet storage fees                                                                                                                                                               
+- Chainlink Automation LINK tokens (~60 LINK for keeper upkeeps)                                                                                                                          
+                                                                                                                                                                                            
+For testnet: everything is free. 
