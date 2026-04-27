@@ -1,268 +1,224 @@
 # Ponder Indexer
 
 **Port:** 42069
-**Technology:** [Ponder.sh](https://ponder.sh) — Base-native event indexer
+**Technology:** [Ponder](https://ponder.sh) 0.7.17 — Base-native event indexer
 **PM2 name:** `plot-oracle-42069`
 
-**Status: Architecture defined; implementation pending**
+**Status: Implemented and running on Base Sepolia testnet**
 
 ---
 
 ## What It Does
 
-Ponder listens to Base L2 and indexes Plot Protocol contract events into a local database.
+Ponder listens to Base Sepolia and indexes Plot Protocol contract events into a local PGlite database.
 The Node.js API queries Ponder instead of reading from the chain directly — this is much faster
-and cheaper than calling `eth_call` for every query.
+and cheaper than calling `eth_call` for every list query.
+
+- **Sync time on first run:** ~60–300s to catch up from `startBlock` to the current chain head
+- **GraphQL endpoint:** `http://localhost:42069/graphql`
+- **Health endpoint:** `http://localhost:42069/health`
 
 ---
 
-## Events to Index
+## Indexed Contracts
 
-### ClaimRegistry events
+<!-- AUTO-GENERATED from indexer/ponder.config.ts -->
 
-| Event | Fields | Use Case |
-|-------|--------|----------|
-| `ClaimSubmitted` | claimId, submitter, contentHash, domain, bond | List claims, submitter history |
-| `StatusChanged` | claimId, oldStatus, newStatus | Status timeline |
-| `DomainFinalized` | claimId, voterAssignedDomain | Final domain tag |
-| `NoveltyResult` | claimId, passed | Novelty outcome |
-| `ConfidenceScoreSet` | claimId, score | Final confidence score |
-| `ClaimSuperseded` | oldClaimId, newClaimId | Version history |
+| Contract | Address (Base Sepolia) | startBlock |
+|----------|------------------------|------------|
+| ClaimRegistry | 0x4018c2cdc76d2282caabc40ab4fa16f3cca9f866 | 40666128 |
+| ChallengeWindow | 0x596639e733dd9263ccfbce38f857688b40bb4c87 | 40666128 |
+| OracleRouter | 0x4e9932c37e43cfcb973e00fc621973660a530e57 | 40666128 |
+| InternalVote | 0x2e62f06f3a1d7028cc5182790d235667fb45ca53 | 40666128 |
+| EmissionController | 0xe187aceaf04b9c791f58ba1de3a4342a92e7482b | 40666128 |
 
-### ChallengeWindow events
+Contract addresses default to the values above when the env vars are not set. Set `DEPLOY_BLOCK` in `.env` to override the start block.
 
-| Event | Fields | Use Case |
-|-------|--------|----------|
-| `WindowOpened` | claimId, expiresAt | Display countdown |
-| `ChallengeOpened` | claimId, challenger, bond | Show who challenged |
-| `WindowExpired` | claimId | Mark unchallenged finalization |
+ABIs are loaded at runtime from `../contracts/out/<Name>.sol/<Name>.json` (Foundry build output).
 
-### OracleRouter events
-
-| Event | Fields | Use Case |
-|-------|--------|----------|
-| `DisputeResolved` | claimId, verified, score | Final resolution record |
-| `SubmitterBondReleased` | claimId | Bond return confirmation |
-
-### InternalVote events
-
-| Event | Fields | Use Case |
-|-------|--------|----------|
-| `VoteOpened` | claimId | Show vote is active |
-| `VoteCast` | claimId, voter, support, weight | Vote tally display |
-| `VoteFinalized` | claimId, verified, weightFor, weightAgainst | Outcome with breakdown |
-
-### EmissionController events
-
-| Event | Fields | Use Case |
-|-------|--------|----------|
-| `EmissionMinted` | to, amount | Emission history |
-| `CircuitBreakerTriggered` | pausedUntil | Show pause status |
-| `EmergencyModeActivated` | — | Alert dashboard |
+<!-- END AUTO-GENERATED -->
 
 ---
 
-## Ponder Configuration (ponder.config.ts)
+## Database Schema
 
-```typescript
-import { createConfig } from "@ponder/core";
-import { http } from "viem";
+<!-- AUTO-GENERATED from indexer/ponder.schema.ts -->
 
-import ClaimRegistryAbi from "../contracts/out/ClaimRegistry.sol/ClaimRegistry.json";
-import ChallengeWindowAbi from "../contracts/out/ChallengeWindow.sol/ChallengeWindow.json";
-import OracleRouterAbi from "../contracts/out/OracleRouter.sol/OracleRouter.json";
-import InternalVoteAbi from "../contracts/out/InternalVote.sol/InternalVote.json";
-import EmissionControllerAbi from "../contracts/out/EmissionController.sol/EmissionController.json";
+Uses Ponder 0.7 `onchainTable` API (Drizzle ORM column types).
 
-export default createConfig({
-  networks: {
-    base: {
-      chainId: 8453,
-      transport: http(process.env.BASE_RPC_URL),
-    },
-  },
-  contracts: {
-    ClaimRegistry: {
-      network: "base",
-      abi: ClaimRegistryAbi.abi,
-      address: process.env.CLAIM_REGISTRY_ADDRESS as `0x${string}`,
-      startBlock: parseInt(process.env.DEPLOY_BLOCK ?? "0"),
-    },
-    ChallengeWindow: {
-      network: "base",
-      abi: ChallengeWindowAbi.abi,
-      address: process.env.CHALLENGE_WINDOW_ADDRESS as `0x${string}`,
-      startBlock: parseInt(process.env.DEPLOY_BLOCK ?? "0"),
-    },
-    OracleRouter: {
-      network: "base",
-      abi: OracleRouterAbi.abi,
-      address: process.env.ORACLE_ROUTER_ADDRESS as `0x${string}`,
-      startBlock: parseInt(process.env.DEPLOY_BLOCK ?? "0"),
-    },
-    InternalVote: {
-      network: "base",
-      abi: InternalVoteAbi.abi,
-      address: process.env.INTERNAL_VOTE_ADDRESS as `0x${string}`,
-      startBlock: parseInt(process.env.DEPLOY_BLOCK ?? "0"),
-    },
-    EmissionController: {
-      network: "base",
-      abi: EmissionControllerAbi.abi,
-      address: process.env.EMISSION_CONTROLLER_ADDRESS as `0x${string}`,
-      startBlock: parseInt(process.env.DEPLOY_BLOCK ?? "0"),
-    },
-  },
-});
-```
+### `claim`
 
----
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | hex (PK) | bytes32 claimId |
+| `contentHash` | hex | keccak256 of claim payload |
+| `submitter` | hex | submitter wallet address |
+| `bond` | bigint | USDC bond amount (6 decimals) |
+| `status` | text | `Submitted \| Pending \| Disputed \| Verified \| Rejected \| Superseded` |
+| `selfDeclaredDomain` | integer | Domain enum (0–5) |
+| `voterAssignedDomain` | integer? | Set after vote finalization |
+| `domainFinalized` | boolean | True after DomainFinalized event |
+| `confidenceScore` | integer? | Set by ConfidenceScorer |
+| `submittedAt` | bigint | Block timestamp |
+| `previousVersion` | hex? | Prior claim ID if this is a superseding claim |
+| `nextVersion` | hex? | Superseding claim ID if this was superseded |
+| `noveltyPassed` | boolean? | Result of SNS novelty check |
 
-## Schema (ponder.schema.ts)
+### `challenge_window`
 
-```typescript
-import { createSchema } from "@ponder/core";
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | hex (PK) | claimId |
+| `openedAt` | bigint | Block timestamp |
+| `expiresAt` | bigint | Block timestamp |
+| `challenger` | hex? | Challenger address if challenged |
+| `challengerBond` | bigint? | USDC bond posted by challenger |
+| `finalized` | boolean | True after WindowExpired event |
 
-export default createSchema((p) => ({
-  Claim: p.createTable({
-    id: p.string(),               // bytes32 claimId as hex string
-    contentHash: p.string(),
-    submitter: p.string(),
-    bond: p.bigint(),
-    status: p.string(),           // Submitted | Pending | Disputed | Verified | Rejected | Superseded
-    selfDeclaredDomain: p.int(),
-    voterAssignedDomain: p.int().optional(),
-    domainFinalized: p.boolean(),
-    confidenceScore: p.int().optional(),
-    submittedAt: p.bigint(),
-    previousVersion: p.string().optional(),
-    nextVersion: p.string().optional(),
-    noveltyPassed: p.boolean().optional(),
-    arweaveTxId: p.string().optional(),
-  }),
+### `vote_record`
 
-  ChallengeWindow: p.createTable({
-    id: p.string(),               // claimId
-    openedAt: p.bigint(),
-    expiresAt: p.bigint(),
-    challenger: p.string().optional(),
-    challengerBond: p.bigint(),
-    finalized: p.boolean(),
-  }),
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | hex (PK) | claimId |
+| `openedAt` | bigint | Block timestamp |
+| `weightFor` | bigint | Cumulative vote weight in favour |
+| `weightAgainst` | bigint | Cumulative vote weight against |
+| `finalized` | boolean | True after VoteFinalized event |
+| `verified` | boolean? | Final vote outcome |
 
-  VoteRecord: p.createTable({
-    id: p.string(),               // claimId
-    openedAt: p.bigint(),
-    weightFor: p.bigint(),
-    weightAgainst: p.bigint(),
-    finalized: p.boolean(),
-    verified: p.boolean().optional(),
-  }),
+### `emission`
 
-  Emission: p.createTable({
-    id: p.string(),               // tx hash
-    to: p.string(),
-    amount: p.bigint(),
-    timestamp: p.bigint(),
-  }),
-}));
-```
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | text (PK) | `${txHash}-${logIndex}` |
+| `to` | hex | Recipient address |
+| `amount` | bigint | PLOT tokens minted |
+| `timestamp` | bigint | Block timestamp |
+
+<!-- END AUTO-GENERATED -->
 
 ---
 
-## Event Handlers (src/index.ts)
+## Events Indexed
 
-```typescript
-import { ponder } from "@/generated";
+<!-- AUTO-GENERATED from indexer/src/index.ts -->
 
-ponder.on("ClaimRegistry:ClaimSubmitted", async ({ event, context }) => {
-  const { ClaimRegistry } = context.db;
-  await ClaimRegistry.create({
-    id: event.args.claimId,
-    data: {
-      contentHash: event.args.contentHash,
-      submitter: event.args.submitter,
-      bond: event.args.bond,
-      status: "Submitted",
-      selfDeclaredDomain: event.args.selfDeclaredDomain,
-      domainFinalized: false,
-      submittedAt: event.block.timestamp,
-      noveltyPassed: false,
-    },
-  });
-});
+### ClaimRegistry
 
-ponder.on("ClaimRegistry:StatusChanged", async ({ event, context }) => {
-  const { ClaimRegistry } = context.db;
-  const statusNames = ["Submitted", "Pending", "Disputed", "Verified", "Rejected", "Superseded"];
-  await ClaimRegistry.update({
-    id: event.args.claimId,
-    data: { status: statusNames[event.args.newStatus] },
-  });
-});
+| Event | Action |
+|-------|--------|
+| `ClaimSubmitted` | Insert `claim` row with status `Submitted` |
+| `StatusChanged` | Update `claim.status` |
+| `NoveltyResult` | Update `claim.noveltyPassed` |
+| `ConfidenceScoreSet` | Update `claim.confidenceScore` |
+| `DomainFinalized` | Update `claim.voterAssignedDomain` + `claim.domainFinalized = true` |
+| `ClaimSuperseded` | Set `claim.nextVersion` on old row, `claim.previousVersion` on new row |
 
-ponder.on("ClaimRegistry:ConfidenceScoreSet", async ({ event, context }) => {
-  const { ClaimRegistry } = context.db;
-  await ClaimRegistry.update({
-    id: event.args.claimId,
-    data: { confidenceScore: event.args.score },
-  });
-});
+### ChallengeWindow
 
-// ... similar handlers for other events
-```
+| Event | Action |
+|-------|--------|
+| `WindowOpened` | Insert `challenge_window` row |
+| `ChallengeOpened` | Update `challenger` + `challengerBond` |
+| `WindowExpired` | Update `finalized = true` |
+
+### OracleRouter
+
+| Event | Action |
+|-------|--------|
+| `DisputeResolved` | Update `claim.status` (`Verified` or `Rejected`) + `claim.confidenceScore` |
+
+### InternalVote
+
+| Event | Action |
+|-------|--------|
+| `VoteOpened` | Insert `vote_record` row |
+| `VoteCast` | Accumulate `weightFor` or `weightAgainst` |
+| `VoteFinalized` | Update final weights + `finalized = true` + `verified` |
+
+### EmissionController
+
+| Event | Action |
+|-------|--------|
+| `EmissionMinted` | Insert `emission` row |
+
+<!-- END AUTO-GENERATED -->
 
 ---
 
-## GraphQL API (auto-generated by Ponder)
+## GraphQL API
 
-Ponder automatically generates a GraphQL API at `http://localhost:42069/graphql`.
+Ponder auto-generates a GraphQL API at `http://localhost:42069/graphql`.
 
 Example query:
+
 ```graphql
 {
-  claims(
-    where: { status: "Pending", selfDeclaredDomain: 2 }
-    orderBy: "submittedAt"
-    orderDirection: "desc"
-    limit: 10
-  ) {
+  claims(limit: 10, orderBy: "submittedAt", orderDirection: "desc") {
     items {
       id
       submitter
       bond
       status
+      selfDeclaredDomain
       confidenceScore
       submittedAt
+      noveltyPassed
     }
+    totalCount
+  }
+}
+```
+
+Filter by status and domain:
+
+```graphql
+{
+  claims(where: { status: "Pending", selfDeclaredDomain: 2 }) {
+    items { id submitter status }
   }
 }
 ```
 
 ---
 
-## Implementation Plan
+## Source Layout
 
-1. Create `services/indexer/` directory with `package.json`
-2. Install Ponder: `bun add @ponder/core viem`
-3. Copy contract ABIs from `contracts/out/`
-4. Write `ponder.config.ts` with contract addresses from `.env`
-5. Write `ponder.schema.ts` with all tables
-6. Write event handlers in `src/index.ts`
-7. Run `bun ponder dev` to start local development
-8. Query at `http://localhost:42069/graphql`
-9. Add to `ecosystem.config.cjs` for PM2 management
+```
+indexer/
+├── ponder.config.ts      # Network, contract addresses, ABIs
+├── ponder.schema.ts      # onchainTable definitions (Ponder 0.7 / Drizzle)
+├── src/
+│   └── index.ts          # Event handlers (ponder.on("Contract:Event", ...))
+├── package.json
+└── tsconfig.json
+```
 
 ---
 
 ## Environment Variables
 
-```env
-BASE_RPC_URL=https://mainnet.base.org
-DEPLOY_BLOCK=<block number when contracts were deployed>
-CLAIM_REGISTRY_ADDRESS=0x...
-CHALLENGE_WINDOW_ADDRESS=0x...
-ORACLE_ROUTER_ADDRESS=0x...
-INTERNAL_VOTE_ADDRESS=0x...
-EMISSION_CONTROLLER_ADDRESS=0x...
-```
+<!-- AUTO-GENERATED from indexer/ponder.config.ts -->
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BASE_RPC_URL` | No | Base Sepolia RPC (default: https://sepolia.base.org) |
+| `DEPLOY_BLOCK` | No | Start block for indexing (default: 40666128) |
+| `CLAIM_REGISTRY_ADDRESS` | No | Overrides hardcoded default |
+| `CHALLENGE_WINDOW_ADDRESS` | No | Overrides hardcoded default |
+| `ORACLE_ROUTER_ADDRESS` | No | Overrides hardcoded default |
+| `INTERNAL_VOTE_ADDRESS` | No | Overrides hardcoded default |
+| `EMISSION_CONTROLLER_ADDRESS` | No | Overrides hardcoded default |
+| `PONDER_PORT` | Yes (PM2) | Port for Ponder HTTP server — must be `42069` |
+
+`PONDER_PORT` is set in `ecosystem.config.cjs` and is required by Ponder 0.7 to bind to a specific port. Without it, Ponder binds to port 0 (random ephemeral).
+
+<!-- END AUTO-GENERATED -->
+
+---
+
+## Known Behaviour
+
+- **First-run sync:** Ponder must replay all blocks from `DEPLOY_BLOCK` to current head before the HTTP server starts accepting requests. Allow up to 300s on cold start.
+- **`@/generated` virtual module:** Resolved by Ponder's internal bundler at runtime. The `paths` alias in `tsconfig.json` (`@/* → .ponder/types/*`) enables IDE type-checking only.
+- **Drizzle ORM API:** Ponder 0.7 uses `onchainTable` + Drizzle column types. The older `createSchema` / `p.createTable` API is NOT available in this version.

@@ -170,3 +170,12 @@ network_to_chain_id() {
 network_to_rpc_alias() {
   echo "$1"  # foundry.toml keys match our network names exactly
 }
+
+# Network name → actual HTTP RPC URL (for use with cast outside contracts/)
+network_to_rpc_url() {
+  case "$1" in
+    base_sepolia) echo "https://sepolia.base.org" ;;
+    base_mainnet) echo "${BASE_RPC_URL:-https://mainnet.base.org}" ;;
+    *)            echo "$1" ;;  # already a URL
+  esac
+}

@@ -38,6 +38,8 @@ load_env_file "$ROOT_DIR/.env"
 REQUIRED_VARS=(PRIVATE_KEY SNS_ORACLE_WALLET OPERATOR_WALLET)
 for var in "${REQUIRED_VARS[@]}"; do require_env "$var"; done
 
+RPC_URL=$(network_to_rpc_url "$NETWORK")
+
 log_info "Loading deployed contract addresses from deployments/${NETWORK}.json..."
 export_all_addresses "$NETWORK"
 
@@ -60,21 +62,21 @@ has_role() {
   local role_hash="$2"
   local grantee="$3"
   "$CAST" call "$contract_addr" "hasRole(bytes32,address)(bool)" \
-    "$role_hash" "$grantee" --rpc-url "$NETWORK" 2>/dev/null || echo "false"
+    "$role_hash" "$grantee" --rpc-url "$RPC_URL" 2>/dev/null || echo "false"
 }
 
-NOVELTY_GATE_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "NOVELTY_GATE_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-ORACLE_ROUTER_ROLE_CR=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-CLAIM_REGISTRY_ROLE=$("$CAST" call "$BOND_ESCROW_ADDRESS" "CLAIM_REGISTRY_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-ORACLE_ROUTER_ROLE_BE=$("$CAST" call "$BOND_ESCROW_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-ORACLE_ROUTER_ROLE_CW=$("$CAST" call "$CHALLENGE_WINDOW_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-INTERNAL_VOTE_ROLE=$("$CAST" call "$ORACLE_ROUTER_ADDRESS" "INTERNAL_VOTE_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
+NOVELTY_GATE_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "NOVELTY_GATE_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+ORACLE_ROUTER_ROLE_CR=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+CLAIM_REGISTRY_ROLE=$("$CAST" call "$BOND_ESCROW_ADDRESS" "CLAIM_REGISTRY_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+ORACLE_ROUTER_ROLE_BE=$("$CAST" call "$BOND_ESCROW_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+ORACLE_ROUTER_ROLE_CW=$("$CAST" call "$CHALLENGE_WINDOW_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+INTERNAL_VOTE_ROLE=$("$CAST" call "$ORACLE_ROUTER_ADDRESS" "INTERNAL_VOTE_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
 SNS_ORACLE_ROLE=$("$CAST" keccak "SNS_ORACLE_ROLE" 2>/dev/null || echo "")
-MINTER_ROLE=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MINTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
+MINTER_ROLE=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MINTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
 OPERATOR_ROLE=$("$CAST" keccak "OPERATOR_ROLE" 2>/dev/null || echo "")
-PROPOSER_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "PROPOSER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-EXECUTOR_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "EXECUTOR_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-CANCELLER_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "CANCELLER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
+PROPOSER_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "PROPOSER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+EXECUTOR_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "EXECUTOR_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+CANCELLER_ROLE=$("$CAST" call "$TIMELOCK_ADDRESS" "CANCELLER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
 
 print_role_status() {
   local label="$1"; local result="$2"
@@ -135,7 +137,7 @@ PASS=0; FAIL=0
 verify_role() {
   local label="$1"; local contract="$2"; local role="$3"; local grantee="$4"
   local result
-  result=$("$CAST" call "$contract" "hasRole(bytes32,address)(bool)" "$role" "$grantee" --rpc-url "$NETWORK" 2>/dev/null || echo "false")
+  result=$("$CAST" call "$contract" "hasRole(bytes32,address)(bool)" "$role" "$grantee" --rpc-url "$RPC_URL" 2>/dev/null || echo "false")
   if [[ "$result" == "true" ]]; then
     echo "  [PASS] $label"
     (( PASS++ )) || true
@@ -199,7 +201,7 @@ if [[ "$ADMIN_HANDOFF" == "true" ]]; then
       "grantRole(bytes32,address)" \
       "$DEFAULT_ADMIN_ROLE" "$GNOSIS_SAFE_ADDRESS" \
       --private-key "$PRIVATE_KEY" \
-      --rpc-url "$NETWORK"
+      --rpc-url "$RPC_URL"
   done
 
   write_deployment_json "$NETWORK" ".adminHandedOff" "\"partial\""

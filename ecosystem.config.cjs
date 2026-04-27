@@ -1,8 +1,10 @@
+const ROOT = __dirname;
+
 module.exports = {
   apps: [
     {
       name: 'plot-oracle-3000',
-      cwd: './backend',
+      cwd: `${ROOT}/backend`,
       script: 'node_modules/tsx/dist/cli.mjs',
       args: 'src/index.ts',
       interpreter: 'node',
@@ -10,18 +12,18 @@ module.exports = {
     },
     {
       name: 'plot-oracle-8000',
-      cwd: './services/sns',
+      cwd: `${ROOT}/services/sns`,
       script: 'start.cjs',
       interpreter: 'node',
       env: { PYTHONUNBUFFERED: '1' }
     },
     {
       name: 'plot-oracle-42069',
-      cwd: './indexer',
+      cwd: `${ROOT}/indexer`,
       script: 'node_modules/.bin/ponder',
       args: 'dev',
       interpreter: 'node',
-      env: { NODE_ENV: 'development' }
+      env: { NODE_ENV: 'development', PONDER_PORT: '42069' }
     }
   ]
 }

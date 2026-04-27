@@ -127,6 +127,45 @@ bash scripts/deploy/phase4-services.sh --network base_sepolia --start-qdrant
 
 ---
 
+## Step 7: End-to-End Claim Test
+
+Verifies the full claim pipeline end-to-end: POST /claims → on-chain read → Ponder indexer.
+
+**Pre-requisite:** relay wallet (`PRIVATE_KEY`) must hold test USDC on Base Sepolia.
+Get some from [https://faucet.circle.com](https://faucet.circle.com) (select Base Sepolia, token USDC).
+
+The default bond rates ($100–$2500 USDC per domain) are designed for production.
+For testnet testing with limited faucet funds, first lower all bonds to 1 USDC:
+
+```bash
+cd contracts
+set -a && source ../.env && set +a
+forge script script/SetTestnetBonds.s.sol \
+  --rpc-url "$BASE_RPC_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast -vv
+cd ..
+```
+
+> `SetTestnetBonds.s.sol` steps bonds down 25%-at-a-time (the governance limit per call) until
+> all 6 domains reach 1 USDC. Takes ~130 transactions; runs in one `forge script` invocation.
+
+Then run the e2e test:
+
+```bash
+bash scripts/test/e2e-claim.sh
+```
+
+The script performs 4 checks:
+1. **Pre-flight** — backend `/health` + Ponder `/health` both return 200
+2. **Balance** — relay wallet has > 0 USDC; exits with faucet URL if empty
+3. **Submit claim** — `POST /claims`, verifies `claim_id` and `tx_hash` in response
+4. **Ponder index** — polls GraphQL up to 5×5s until the claim_id appears
+
+All 4 checks must pass before proceeding to mainnet.
+
+---
+
 ## Full Testnet Sequence (One-liner Reference)
 
 ```bash
@@ -134,7 +173,8 @@ bash scripts/deploy/phase1-prereqs.sh && \
 bash scripts/deploy/phase2-deploy-contracts.sh --network base_sepolia --broadcast && \
 bash scripts/deploy/phase3-wire-roles.sh --network base_sepolia --broadcast && \
 bash scripts/deploy/smoke-test.sh --network base_sepolia && \
-bash scripts/deploy/phase4-services.sh --network base_sepolia
+bash scripts/deploy/phase4-services.sh --network base_sepolia && \
+bash scripts/test/e2e-claim.sh
 ```
 
 ---

@@ -3,8 +3,9 @@
 **Port:** 3000
 **Technology:** Node.js + TypeScript + Express
 **PM2 name:** `plot-oracle-3000`
+**Runtime:** `tsx` (no compilation step; PM2 invokes `tsx src/index.ts` directly)
 
-**Status: Architecture defined; implementation pending**
+**Status: Implemented and running on Base Sepolia testnet**
 
 ---
 
@@ -13,176 +14,192 @@
 The Node.js API is the primary entry point for users and AI agents interacting with Plot Protocol.
 It sits between the user and the on-chain contracts, handling:
 
-1. **Claim submission** — accepts claim text, uploads to Arweave, calls ClaimRegistry on-chain
-2. **Novelty relay** — calls SNS service, then submits result to NoveltyGate on-chain
-3. **Query layer** — exposes claim data indexed by Ponder (no direct chain reads for most queries)
-4. **Webhook/notification** — optionally notifies subscribers of claim status changes
+1. **Claim submission** — accepts claim text, calls ClaimRegistry on-chain, runs SNS novelty check, relays result to NoveltyGate
+2. **Novelty relay** — calls SNS service, then submits result to NoveltyGate on-chain via the relay signer wallet
+3. **Query layer** — proxies claim list queries to the Ponder indexer (GraphQL), falls back to direct chain reads for individual claims
+4. **Duplicate detection** — checks `contentHashToClaim()` before submitting to reject exact duplicates
 
 ---
 
-## Planned API Endpoints
+## API Endpoints
+
+### Health
+
+```
+GET /health
+```
+
+Response: `{"status":"ok","service":"plot-oracle-backend","version":"0.1.0"}`
 
 ### Claims
 
 ```
 POST /claims                Submit a new claim
 GET  /claims                List claims (paginated, filterable by domain/status)
-GET  /claims/:claimId       Get a single claim with full status
-GET  /claims/:claimId/window  Get challenge window state
+GET  /claims/:claimId       Get a single claim (direct on-chain read)
 ```
 
-### Submission Flow
+---
 
-`POST /claims` orchestrates the entire submission flow:
+## POST /claims — Submission Flow
 
-```typescript
-// Request body
+<!-- AUTO-GENERATED from backend/src/routes/claims.ts -->
+
+**Request body:**
+
+```json
 {
-  "claim_text": "string",         // Full claim text (stored on Arweave)
-  "domain": "Finance",            // Self-declared domain
-  "complexity": "MEDIUM",         // LOW | MEDIUM | HIGH | VERY_HIGH
-  "sources": ["https://..."],     // Source URLs (at least 1 required)
-  "submitter_address": "0x...",   // Submitter's wallet address
-  "signature": "0x..."            // EIP-712 signature authorizing submission
+  "claim_text": "string (min 10 chars, required)",
+  "domain": "General | Science | Finance | Medical | Regulatory | NationalSecurity (default: General)",
+  "complexity": "LOW | MEDIUM | HIGH | VERY_HIGH (default: MEDIUM)",
+  "sources": ["https://..."],
+  "submitter_address": "0x... (required)"
 }
+```
 
-// Response
+**Orchestration steps:**
+
+1. `keccak256(JSON.stringify({text, domain, sources, submitter, timestamp}))` → `contentHash`
+2. `ClaimRegistry.contentHashToClaim(contentHash)` — reject with 409 if exact duplicate
+3. `BondCalculator.calculateBond(domainCode, complexityBps)` → `bondRequired`
+4. `ClaimRegistry.submitClaim(contentHash, domainCode, complexityBps, ZeroHash)` → parse `ClaimSubmitted` event for `claimId`
+5. `SNS.POST /novelty/check` → novelty result with `similarity_bps` and `nearest_claim_id`
+6. `NoveltyGate.submitNoveltyResult(claimId, similarity_bps, nearestIdHex, justificationHash)` — relay signer signs
+7. `SNS.POST /novelty/embed` — store embedding for future comparisons
+
+SNS failures are non-fatal: the claim is still submitted, with `novelty_result: null` in the response.
+
+**Complexity → BPS mapping** (matches `BondCalculator` constants):
+
+| complexity | basis points | multiplier |
+|------------|--------------|------------|
+| LOW        | 10000        | 1×         |
+| MEDIUM     | 20000        | 2×         |
+| HIGH       | 30000        | 3×         |
+| VERY_HIGH  | 50000        | 5×         |
+
+**Domain → enum mapping:** General=0, Science=1, Finance=2, Medical=3, Regulatory=4, NationalSecurity=5
+
+**Response (201):**
+
+```json
 {
-  "claim_id": "0x...",            // On-chain bytes32 claim ID
-  "arweave_tx_id": "abc...",      // Arweave transaction ID for full content
-  "bond_required": "100000000",   // USDC amount (6 decimals) submitter must approve
-  "tx_hash": "0x...",             // ClaimRegistry.submitClaim() transaction hash
+  "claim_id": "0x...",
+  "content_hash": "0x...",
+  "bond_required": "100000000",
+  "tx_hash": "0x...",
   "novelty_result": {
     "is_novel": true,
-    "similarity_score": 0.71,
-    "classification": "NOVEL"
+    "similarity_bps": 1000,
+    "nearest_claim_id": "0x...",
+    "justification": "..."
   }
 }
 ```
 
-### Governance
+> **Note:** `bond_required` is informational only. The relay wallet (`PRIVATE_KEY`) is the actual bond payer: it calls `ClaimRegistry.submitClaim()` as `msg.sender`, so BondEscrow deducts from the relay wallet's USDC. The API automatically checks the relay's USDC allowance and calls `usdc.approve(BOND_ESCROW_ADDRESS, MaxUint256)` once if needed — no manual approval step required.
 
-```
-GET  /proposals             List active governance proposals
-POST /proposals             Create a new governance proposal (via GovernorPlot)
-GET  /proposals/:id         Proposal details + current votes
-```
+<!-- END AUTO-GENERATED -->
 
 ---
 
-## Arweave / Irys Integration
+## GET /claims — List Claims
 
-Every claim must be permanently stored on Arweave before the on-chain submission. The API
-uses the Irys SDK to upload:
+Proxies a GraphQL query to Ponder at `http://localhost:42069/graphql`.
 
-```typescript
-import Irys from "@irys/sdk";
+**Query parameters:**
 
-const irys = new Irys({
-  network: "mainnet",  // or "devnet" for testing
-  token: "ethereum",
-  key: process.env.IRYS_PRIVATE_KEY,
-  config: { providerUrl: process.env.BASE_RPC_URL }
-});
+| Param | Description |
+|-------|-------------|
+| `limit` | Max results (capped at 100, default 20) |
+| `offset` | Pagination offset (default 0) |
+| `status` | Filter by status string (`Submitted`, `Pending`, `Disputed`, `Verified`, `Rejected`, `Superseded`) |
+| `domain` | Filter by domain code (integer 0–5) |
 
-// Upload claim content
-const claimPayload = {
-  text: claimText,
-  domain: domain,
-  sources: sources,
-  submitter: submitterAddress,
-  timestamp: Date.now()
-};
+**Response:** `{ items: [...], totalCount: N }`
 
-const receipt = await irys.upload(JSON.stringify(claimPayload), {
-  tags: [
-    { name: "Content-Type", value: "application/json" },
-    { name: "protocol", value: "plot-protocol" },
-    { name: "claim-id", value: claimId }
-  ]
-});
-
-const arweaveTxId = receipt.id;
-const contentHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(claimPayload)));
-```
-
-The `contentHash` is then passed to `ClaimRegistry.submitClaim()` as the on-chain pointer.
+Returns 502 if the Ponder indexer is not reachable.
 
 ---
 
-## On-Chain Transaction Relay
+## GET /claims/:claimId — Get Claim
 
-The API acts as a gasless relay: users sign an EIP-712 typed message, the API submits the
-transaction on their behalf (paying gas), and the user is charged via the bond mechanism.
+Direct on-chain read via `ClaimRegistry.getClaim(claimId)`.
 
-This enables integration with Coinbase Smart Wallet and gasless onboarding.
+**Response:**
 
-For the SNS novelty relay:
-```typescript
-// After SNS check, the SNS oracle wallet submits on-chain
-const tx = await noveltyGate.submitNoveltyResult(
-  claimId,
-  similarityBps,
-  nearestClaimIdBytes32,
-  justificationHashBytes32,
-  { from: snsOracleWallet }  // must hold SNS_ORACLE_ROLE
-);
+```json
+{
+  "id": "0x...",
+  "content_hash": "0x...",
+  "submitter": "0x...",
+  "bond": "100000000",
+  "status": "Submitted",
+  "domain": "Finance",
+  "voter_domain": null,
+  "domain_finalized": false,
+  "confidence_score": "0",
+  "submitted_at": "1745000000",
+  "previous_version": null,
+  "next_version": null,
+  "novelty_passed": false
+}
 ```
+
+Returns 404 if the submitter is the zero address (claim doesn't exist).
 
 ---
 
-## Citation Verification Service (CVS)
+## Source Layout
 
-The API also runs the Citation Verification Service (CVS) as part of claim submission:
-
-1. Fetch each source URL using Playwright (handles JavaScript-rendered pages)
-2. Archive the snapshot to Arweave
-3. Compute semantic similarity between claim text and source content
-4. Return a Source Grounding Score (0.0 – 1.0)
-5. If score < 0.50, the claim is flagged for higher bond (not implemented in v1)
-
-```typescript
-// CVS integration point (v2)
-const cvs_result = await verifyCitations(claimText, sources);
-// cvs_result.groundingScore: 0.0-1.0
-// cvs_result.arweaveSnapshots: [txId, txId, ...]
 ```
+backend/
+├── src/
+│   ├── index.ts          # Express app, /health, mounts claimsRouter
+│   ├── lib/
+│   │   ├── env.ts        # Loads ../.env (parent dir), exports typed env vars
+│   │   ├── contracts.ts  # ethers provider, signer, contract instances
+│   │   └── sns.ts        # HTTP client for SNS FastAPI service
+│   └── routes/
+│       └── claims.ts     # POST/GET /claims handlers
+├── package.json
+└── tsconfig.json
+```
+
+The `.env` file is loaded from the **parent directory** (`../`) because PM2 sets `cwd` to `backend/` and the project root `.env` is one level up.
 
 ---
 
 ## Environment Variables
 
-```env
-PORT=3000
-BASE_RPC_URL=https://mainnet.base.org
+<!-- AUTO-GENERATED from backend/src/lib/env.ts -->
 
-# Contract addresses (filled after deployment)
-CLAIM_REGISTRY_ADDRESS=0x...
-NOVELTY_GATE_ADDRESS=0x...
-BOND_ESCROW_ADDRESS=0x...
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Listen port (default: 3000) |
+| `BASE_RPC_URL` | Yes | Base RPC endpoint |
+| `PRIVATE_KEY` | Yes | Relay signer wallet private key (0x-prefixed) |
+| `CLAIM_REGISTRY_ADDRESS` | Yes | ClaimRegistry contract address |
+| `NOVELTY_GATE_ADDRESS` | Yes | NoveltyGate contract address |
+| `BOND_CALCULATOR_ADDRESS` | Yes | BondCalculator contract address |
+| `BOND_ESCROW_ADDRESS` | Yes | BondEscrow contract address (relay auto-approves USDC to this) |
+| `SNS_SERVICE_URL` | No | SNS service base URL (default: http://localhost:8000) |
+| `PONDER_URL` | No | Ponder indexer base URL (default: http://localhost:42069) |
 
-# SNS service
-SNS_SERVICE_URL=http://localhost:8000
-
-# Arweave
-IRYS_PRIVATE_KEY=0x...
-IRYS_NETWORK=mainnet
-
-# Signing wallet for SNS oracle
-SNS_ORACLE_PRIVATE_KEY=0x...
-```
+<!-- END AUTO-GENERATED -->
 
 ---
 
-## Implementation Plan
+## Scripts
 
-The Node.js API is not yet implemented. Development order:
+<!-- AUTO-GENERATED from backend/package.json -->
 
-1. **Basic Express app** with health check and TypeScript config
-2. **Contract ABIs** — import from Foundry build output (`contracts/out/`)
-3. **ethers.js integration** — connect to Base, sign/send transactions
-4. **Arweave/Irys upload** — claim text persistence
-5. **POST /claims** — full submission flow
-6. **GET /claims** — query via Ponder indexer
-7. **SNS oracle relay** — automatic NoveltyGate.submitNoveltyResult() after SNS check
-8. **Keeper bot** — auto-finalize windows, open votes, release bonds
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start with tsx (hot reload via tsx watch) |
+| `bun run build` | Compile TypeScript to `dist/` |
+| `bun run start` | Run compiled output (production) |
+
+<!-- END AUTO-GENERATED -->
+
+PM2 uses `tsx src/index.ts` directly (the `dev` script equivalent) — no build step required.

@@ -24,6 +24,7 @@ done
 
 load_env_file "$ROOT_DIR/.env"
 export_all_addresses "$NETWORK"
+RPC_URL=$(network_to_rpc_url "$NETWORK")
 
 PASS=0; FAIL=0
 
@@ -66,25 +67,30 @@ check_gt() {
 echo ""
 echo "=== Plot Protocol Smoke Tests ($NETWORK) ==="
 
+# cast annotates large uints as "123 [1.23e5]" — strip the annotation
+strip_cast() { echo "${1%% [*}"; }
+# cast wraps strings in quotes — strip them
+unquote() { local v="$1"; v="${v#\"}"; echo "${v%\"}"; }
+
 # PLOTToken
 echo ""
 echo "--- PLOTToken ($PLOT_TOKEN_ADDRESS) ---"
-max_supply=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MAX_SUPPLY()(uint256)" --rpc-url "$NETWORK" 2>/dev/null || echo "0")
+max_supply=$(strip_cast "$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MAX_SUPPLY()(uint256)" --rpc-url "$RPC_URL" 2>/dev/null || echo "0")")
 check_eq "PLOTToken.MAX_SUPPLY" "$max_supply" "1000000000000000000000000000"  # 1B * 1e18
 
-treasury_balance=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "balanceOf(address)(uint256)" "$TREASURY_WALLET" --rpc-url "$NETWORK" 2>/dev/null || echo "0")
+treasury_balance=$(strip_cast "$("$CAST" call "$PLOT_TOKEN_ADDRESS" "balanceOf(address)(uint256)" "$TREASURY_WALLET" --rpc-url "$RPC_URL" 2>/dev/null || echo "0")")
 check_eq "Treasury received 200M PLOT" "$treasury_balance" "200000000000000000000000000"
 
 # EmissionController
 echo ""
 echo "--- EmissionController ($EMISSION_CONTROLLER_ADDRESS) ---"
-rate=$("$CAST" call "$EMISSION_CONTROLLER_ADDRESS" "currentRateBps()(uint256)" --rpc-url "$NETWORK" 2>/dev/null || echo "0")
+rate=$(strip_cast "$("$CAST" call "$EMISSION_CONTROLLER_ADDRESS" "currentRateBps()(uint256)" --rpc-url "$RPC_URL" 2>/dev/null || echo "0")")
 check_eq "EmissionController.currentRateBps (Year 0 = 100%)" "$rate" "10000"
 
 # Treasury
 echo ""
 echo "--- Treasury ($TREASURY_ADDRESS) ---"
-veto_expires=$("$CAST" call "$TREASURY_ADDRESS" "vetoExpiresAt()(uint256)" --rpc-url "$NETWORK" 2>/dev/null || echo "0")
+veto_expires=$(strip_cast "$("$CAST" call "$TREASURY_ADDRESS" "vetoExpiresAt()(uint256)" --rpc-url "$RPC_URL" 2>/dev/null || echo "0")")
 now=$(date +%s)
 veto_min=$(( now + 729 * 86400 ))   # must be at least 729 days out (allow 1-day drift)
 check_gt "Treasury.vetoExpiresAt (~730 days from deploy)" "$veto_expires" "$veto_min"
@@ -92,7 +98,7 @@ check_gt "Treasury.vetoExpiresAt (~730 days from deploy)" "$veto_expires" "$veto
 # GovernorPlot
 echo ""
 echo "--- GovernorPlot ($GOVERNOR_ADDRESS) ---"
-gov_name=$("$CAST" call "$GOVERNOR_ADDRESS" "name()(string)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
+gov_name=$(unquote "$("$CAST" call "$GOVERNOR_ADDRESS" "name()(string)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")")
 check_eq "Governor.name" "$gov_name" "GovernorPlot"
 
 # Role bindings
@@ -101,13 +107,13 @@ echo "--- Role Bindings ---"
 has_role_check() {
   local label="$1"; local contract="$2"; local role="$3"; local grantee="$4"
   local result
-  result=$("$CAST" call "$contract" "hasRole(bytes32,address)(bool)" "$role" "$grantee" --rpc-url "$NETWORK" 2>/dev/null || echo "false")
+  result=$("$CAST" call "$contract" "hasRole(bytes32,address)(bool)" "$role" "$grantee" --rpc-url "$RPC_URL" 2>/dev/null || echo "false")
   check_eq "$label" "$result" "true"
 }
 
-NOVELTY_GATE_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "NOVELTY_GATE_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-ORACLE_ROUTER_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
-MINTER_ROLE=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MINTER_ROLE()(bytes32)" --rpc-url "$NETWORK" 2>/dev/null || echo "")
+NOVELTY_GATE_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "NOVELTY_GATE_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+ORACLE_ROUTER_ROLE=$("$CAST" call "$CLAIM_REGISTRY_ADDRESS" "ORACLE_ROUTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
+MINTER_ROLE=$("$CAST" call "$PLOT_TOKEN_ADDRESS" "MINTER_ROLE()(bytes32)" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
 
 [[ -n "$NOVELTY_GATE_ROLE" ]]  && has_role_check "ClaimRegistry.NOVELTY_GATE_ROLE → NoveltyGate"      "$CLAIM_REGISTRY_ADDRESS" "$NOVELTY_GATE_ROLE"  "$NOVELTY_GATE_ADDRESS"
 [[ -n "$ORACLE_ROUTER_ROLE" ]] && has_role_check "ClaimRegistry.ORACLE_ROUTER_ROLE → OracleRouter"    "$CLAIM_REGISTRY_ADDRESS" "$ORACLE_ROUTER_ROLE" "$ORACLE_ROUTER_ADDRESS"

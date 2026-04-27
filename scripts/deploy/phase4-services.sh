@@ -112,7 +112,7 @@ fi
 # Node.js backend (when implemented)
 BACKEND_DIR="$ROOT_DIR/backend"
 if [[ -d "$BACKEND_DIR" ]]; then
-  if [[ -f "$BACKEND_DIR/bun.lockb" ]]; then
+  if [[ -f "$BACKEND_DIR/bun.lockb" || -f "$BACKEND_DIR/bun.lock" ]]; then
     log_info "  Installing backend deps with bun..."
     (cd "$BACKEND_DIR" && bun install --frozen-lockfile)
   elif [[ -f "$BACKEND_DIR/package-lock.json" ]]; then
@@ -127,7 +127,7 @@ fi
 # Ponder indexer (when implemented)
 INDEXER_DIR="$ROOT_DIR/indexer"
 if [[ -d "$INDEXER_DIR" ]]; then
-  if [[ -f "$INDEXER_DIR/bun.lockb" ]]; then
+  if [[ -f "$INDEXER_DIR/bun.lockb" || -f "$INDEXER_DIR/bun.lock" ]]; then
     log_info "  Installing indexer deps with bun..."
     (cd "$INDEXER_DIR" && bun install --frozen-lockfile)
   elif [[ -f "$INDEXER_DIR/package-lock.json" ]]; then
@@ -179,22 +179,22 @@ fi
 echo ""
 log_info "=== [4/4] Starting PM2 services ==="
 
-PM2_RUNNING=$("$PM2" list 2>/dev/null | grep -c "plot-oracle" || echo "0")
+PM2_RUNNING=$("$PM2" list 2>/dev/null | grep -c "plot-oracle" || true)
+PM2_RUNNING="${PM2_RUNNING//[^0-9]/}"   # strip any ANSI codes; keep digits only
+PM2_RUNNING="${PM2_RUNNING:-0}"
 
+ONLY_FLAG="$(IFS=,; echo "${SERVICES_PRESENT[*]}")"
+log_info "  Starting / restarting PM2 services: ${SERVICES_PRESENT[*]}"
+# start adds new apps + restarts stopped ones; --update-env propagates env changes to running apps
+"$PM2" start "$ROOT_DIR/ecosystem.config.cjs" --only "$ONLY_FLAG" --update-env 2>/dev/null \
+  || "$PM2" start "$ROOT_DIR/ecosystem.config.cjs" --only "$ONLY_FLAG"
 if (( PM2_RUNNING > 0 )); then
-  log_info "  PM2 processes exist — restarting with updated env..."
-  "$PM2" restart all --update-env
-else
-  log_info "  Starting PM2 from ecosystem.config.cjs..."
-  "$PM2" start "$ROOT_DIR/ecosystem.config.cjs" --only "$(IFS=,; echo "${SERVICES_PRESENT[*]}")" 2>/dev/null \
-    || "$PM2" start "$ROOT_DIR/ecosystem.config.cjs"
+  # also reload any already-running apps not captured by start (e.g. SNS already online)
+  "$PM2" restart all --update-env 2>/dev/null || true
 fi
 
 "$PM2" save
 log_info "  PM2 process list saved."
-
-# Wait for services to initialize
-sleep 5
 
 echo ""
 log_info "=== Health Checks ==="
@@ -206,8 +206,17 @@ check_health() {
   local name="$1"
   local url="$2"
   local expected_substr="${3:-}"
-  local response
-  response=$(curl -fsS --max-time 5 "$url" 2>/dev/null || echo "")
+  local deadline="${4:-60}"   # optional 4th arg overrides default 60s timeout
+  local response elapsed=0
+  log_info "  Waiting for $name (up to ${deadline}s)..."
+  while (( elapsed < deadline )); do
+    response=$(curl -fsS --max-time 3 "$url" 2>/dev/null || echo "")
+    if [[ -n "$response" ]]; then
+      break
+    fi
+    sleep 3
+    (( elapsed += 3 )) || true
+  done
   if [[ -n "$response" ]]; then
     if [[ -z "$expected_substr" ]] || echo "$response" | grep -q "$expected_substr"; then
       echo "  [PASS] $name → $url"
@@ -217,7 +226,7 @@ check_health() {
       (( HEALTH_FAIL++ )) || true
     fi
   else
-    echo "  [FAIL] $name → $url (no response)"
+    echo "  [FAIL] $name → $url (no response after ${deadline}s)"
     (( HEALTH_FAIL++ )) || true
   fi
 }
@@ -228,8 +237,8 @@ check_health() {
 # Backend (when present)
 [[ -d "$BACKEND_DIR" ]] && check_health "Node.js API (3000)" "http://localhost:3000/health" '"status"'
 
-# Ponder indexer (when present)
-[[ -d "$INDEXER_DIR" ]] && check_health "Ponder indexer (42069)" "http://localhost:42069/status" ""
+# Ponder indexer (when present) — allow 300s for initial block sync on first run
+[[ -d "$INDEXER_DIR" ]] && check_health "Ponder indexer (42069)" "http://localhost:42069/health" "" "300"
 
 echo ""
 if (( HEALTH_FAIL > 0 )); then

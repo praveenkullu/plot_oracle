@@ -1,0 +1,14 @@
+{
+  "name": "plot-oracle-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ponder dev",
+    "start": "ponder start",
+    "codegen": "ponder codegen"
+  },
+  "dependencies": {
+    "@ponder/core": "^0.7.17",
+    "viem": "^2.21.0"
+  }
+}

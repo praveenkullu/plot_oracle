@@ -16,10 +16,10 @@ User / AI Agent
     ▼ HTTP POST /claims
 [Node.js API :3000]
     │
-    ├── 1. Upload claim text to Arweave via Irys (permanent storage)
+    ├── 1. keccak256(payload) → contentHash; duplicate check via contentHashToClaim()
     │
     ├── 2. Call ClaimRegistry.submitClaim() on-chain
-    │          (user must pre-approve USDC to BondEscrow)
+    │          (submitter must pre-approve USDC to BondEscrow)
     │
     └── 3. POST /novelty/check to SNS service
                │
@@ -36,15 +36,15 @@ User / AI Agent
 
 [Ponder Indexer :42069]
     ├── Watches ClaimSubmitted, StatusChanged, DomainFinalized, etc.
-    ├── Stores in SQLite / Postgres for fast querying
+    ├── Stores in PGlite (embedded Postgres) for fast querying
     └── Powers GET /claims, GET /claims/:id endpoints in Node.js API
 ```
 
 ## Service Documentation
 
-- [SNS Service](sns.md) — Semantic Novelty Service (currently implemented)
-- [Node.js API](api.md) — REST API and on-chain relay (architecture only; not yet implemented)
-- [Ponder Indexer](indexer.md) — Event indexer (architecture only; not yet implemented)
+- [SNS Service](sns.md) — Semantic Novelty Service (implemented, running on port 8000)
+- [Node.js API](api.md) — REST API and on-chain relay (implemented, running on port 3000)
+- [Ponder Indexer](indexer.md) — Event indexer (implemented, running on port 42069)
 
 ## Running Locally
 

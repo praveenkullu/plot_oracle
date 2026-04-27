@@ -1,0 +1,348 @@
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+scalar BigInt
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Meta {
+  status: JSON
+}
+
+type Query {
+  claim(id: String!): claim
+  claims(where: claimFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): claimPage!
+  challengeWindow(id: String!): challengeWindow
+  challengeWindows(where: challengeWindowFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): challengeWindowPage!
+  voteRecord(id: String!): voteRecord
+  voteRecords(where: voteRecordFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): voteRecordPage!
+  emission(id: String!): emission
+  emissions(where: emissionFilter, orderBy: String, orderDirection: String, before: String, after: String, limit: Int): emissionPage!
+  _meta: Meta
+}
+
+type claim {
+  id: String!
+  contentHash: String!
+  submitter: String!
+  bond: BigInt!
+  status: String!
+  selfDeclaredDomain: Int!
+  voterAssignedDomain: Int
+  domainFinalized: Boolean!
+  confidenceScore: Int
+  submittedAt: BigInt!
+  previousVersion: String
+  nextVersion: String
+  noveltyPassed: Boolean
+}
+
+type claimPage {
+  items: [claim!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input claimFilter {
+  AND: [claimFilter]
+  OR: [claimFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  contentHash: String
+  contentHash_not: String
+  contentHash_in: [String]
+  contentHash_not_in: [String]
+  contentHash_contains: String
+  contentHash_not_contains: String
+  contentHash_starts_with: String
+  contentHash_ends_with: String
+  contentHash_not_starts_with: String
+  contentHash_not_ends_with: String
+  submitter: String
+  submitter_not: String
+  submitter_in: [String]
+  submitter_not_in: [String]
+  submitter_contains: String
+  submitter_not_contains: String
+  submitter_starts_with: String
+  submitter_ends_with: String
+  submitter_not_starts_with: String
+  submitter_not_ends_with: String
+  bond: BigInt
+  bond_not: BigInt
+  bond_in: [BigInt]
+  bond_not_in: [BigInt]
+  bond_gt: BigInt
+  bond_lt: BigInt
+  bond_gte: BigInt
+  bond_lte: BigInt
+  status: String
+  status_not: String
+  status_in: [String]
+  status_not_in: [String]
+  status_contains: String
+  status_not_contains: String
+  status_starts_with: String
+  status_ends_with: String
+  status_not_starts_with: String
+  status_not_ends_with: String
+  selfDeclaredDomain: Int
+  selfDeclaredDomain_not: Int
+  selfDeclaredDomain_in: [Int]
+  selfDeclaredDomain_not_in: [Int]
+  selfDeclaredDomain_gt: Int
+  selfDeclaredDomain_lt: Int
+  selfDeclaredDomain_gte: Int
+  selfDeclaredDomain_lte: Int
+  voterAssignedDomain: Int
+  voterAssignedDomain_not: Int
+  voterAssignedDomain_in: [Int]
+  voterAssignedDomain_not_in: [Int]
+  voterAssignedDomain_gt: Int
+  voterAssignedDomain_lt: Int
+  voterAssignedDomain_gte: Int
+  voterAssignedDomain_lte: Int
+  domainFinalized: Boolean
+  domainFinalized_not: Boolean
+  domainFinalized_in: [Boolean]
+  domainFinalized_not_in: [Boolean]
+  confidenceScore: Int
+  confidenceScore_not: Int
+  confidenceScore_in: [Int]
+  confidenceScore_not_in: [Int]
+  confidenceScore_gt: Int
+  confidenceScore_lt: Int
+  confidenceScore_gte: Int
+  confidenceScore_lte: Int
+  submittedAt: BigInt
+  submittedAt_not: BigInt
+  submittedAt_in: [BigInt]
+  submittedAt_not_in: [BigInt]
+  submittedAt_gt: BigInt
+  submittedAt_lt: BigInt
+  submittedAt_gte: BigInt
+  submittedAt_lte: BigInt
+  previousVersion: String
+  previousVersion_not: String
+  previousVersion_in: [String]
+  previousVersion_not_in: [String]
+  previousVersion_contains: String
+  previousVersion_not_contains: String
+  previousVersion_starts_with: String
+  previousVersion_ends_with: String
+  previousVersion_not_starts_with: String
+  previousVersion_not_ends_with: String
+  nextVersion: String
+  nextVersion_not: String
+  nextVersion_in: [String]
+  nextVersion_not_in: [String]
+  nextVersion_contains: String
+  nextVersion_not_contains: String
+  nextVersion_starts_with: String
+  nextVersion_ends_with: String
+  nextVersion_not_starts_with: String
+  nextVersion_not_ends_with: String
+  noveltyPassed: Boolean
+  noveltyPassed_not: Boolean
+  noveltyPassed_in: [Boolean]
+  noveltyPassed_not_in: [Boolean]
+}
+
+type challengeWindow {
+  id: String!
+  openedAt: BigInt!
+  expiresAt: BigInt!
+  challenger: String
+  challengerBond: BigInt
+  finalized: Boolean!
+}
+
+type challengeWindowPage {
+  items: [challengeWindow!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input challengeWindowFilter {
+  AND: [challengeWindowFilter]
+  OR: [challengeWindowFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  openedAt: BigInt
+  openedAt_not: BigInt
+  openedAt_in: [BigInt]
+  openedAt_not_in: [BigInt]
+  openedAt_gt: BigInt
+  openedAt_lt: BigInt
+  openedAt_gte: BigInt
+  openedAt_lte: BigInt
+  expiresAt: BigInt
+  expiresAt_not: BigInt
+  expiresAt_in: [BigInt]
+  expiresAt_not_in: [BigInt]
+  expiresAt_gt: BigInt
+  expiresAt_lt: BigInt
+  expiresAt_gte: BigInt
+  expiresAt_lte: BigInt
+  challenger: String
+  challenger_not: String
+  challenger_in: [String]
+  challenger_not_in: [String]
+  challenger_contains: String
+  challenger_not_contains: String
+  challenger_starts_with: String
+  challenger_ends_with: String
+  challenger_not_starts_with: String
+  challenger_not_ends_with: String
+  challengerBond: BigInt
+  challengerBond_not: BigInt
+  challengerBond_in: [BigInt]
+  challengerBond_not_in: [BigInt]
+  challengerBond_gt: BigInt
+  challengerBond_lt: BigInt
+  challengerBond_gte: BigInt
+  challengerBond_lte: BigInt
+  finalized: Boolean
+  finalized_not: Boolean
+  finalized_in: [Boolean]
+  finalized_not_in: [Boolean]
+}
+
+type voteRecord {
+  id: String!
+  openedAt: BigInt!
+  weightFor: BigInt!
+  weightAgainst: BigInt!
+  finalized: Boolean!
+  verified: Boolean
+}
+
+type voteRecordPage {
+  items: [voteRecord!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input voteRecordFilter {
+  AND: [voteRecordFilter]
+  OR: [voteRecordFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  openedAt: BigInt
+  openedAt_not: BigInt
+  openedAt_in: [BigInt]
+  openedAt_not_in: [BigInt]
+  openedAt_gt: BigInt
+  openedAt_lt: BigInt
+  openedAt_gte: BigInt
+  openedAt_lte: BigInt
+  weightFor: BigInt
+  weightFor_not: BigInt
+  weightFor_in: [BigInt]
+  weightFor_not_in: [BigInt]
+  weightFor_gt: BigInt
+  weightFor_lt: BigInt
+  weightFor_gte: BigInt
+  weightFor_lte: BigInt
+  weightAgainst: BigInt
+  weightAgainst_not: BigInt
+  weightAgainst_in: [BigInt]
+  weightAgainst_not_in: [BigInt]
+  weightAgainst_gt: BigInt
+  weightAgainst_lt: BigInt
+  weightAgainst_gte: BigInt
+  weightAgainst_lte: BigInt
+  finalized: Boolean
+  finalized_not: Boolean
+  finalized_in: [Boolean]
+  finalized_not_in: [Boolean]
+  verified: Boolean
+  verified_not: Boolean
+  verified_in: [Boolean]
+  verified_not_in: [Boolean]
+}
+
+type emission {
+  id: String!
+  to: String!
+  amount: BigInt!
+  timestamp: BigInt!
+}
+
+type emissionPage {
+  items: [emission!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+input emissionFilter {
+  AND: [emissionFilter]
+  OR: [emissionFilter]
+  id: String
+  id_not: String
+  id_in: [String]
+  id_not_in: [String]
+  id_contains: String
+  id_not_contains: String
+  id_starts_with: String
+  id_ends_with: String
+  id_not_starts_with: String
+  id_not_ends_with: String
+  to: String
+  to_not: String
+  to_in: [String]
+  to_not_in: [String]
+  to_contains: String
+  to_not_contains: String
+  to_starts_with: String
+  to_ends_with: String
+  to_not_starts_with: String
+  to_not_ends_with: String
+  amount: BigInt
+  amount_not: BigInt
+  amount_in: [BigInt]
+  amount_not_in: [BigInt]
+  amount_gt: BigInt
+  amount_lt: BigInt
+  amount_gte: BigInt
+  amount_lte: BigInt
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_in: [BigInt]
+  timestamp_not_in: [BigInt]
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+}

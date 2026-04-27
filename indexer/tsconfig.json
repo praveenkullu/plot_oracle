@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": [".ponder/types/*"],
+      "ponder:registry": [".ponder/types/registry.d.ts"]
+    }
+  },
+  "include": ["src/**/*", "ponder.config.ts", "ponder.schema.ts"],
+  "exclude": ["node_modules"]
+}

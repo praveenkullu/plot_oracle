@@ -1,0 +1,75 @@
+{
+  "network": "base_sepolia",
+  "chainId": 84532,
+  "deployedAt": "2026-04-25T07:06:10Z",
+  "deployer": "0x204ACD2965D24bc62251D8d5641DfD6880a6e0F4",
+  "contracts": {
+    "PLOTToken": {
+      "address": "0x5709811daaacb497969166788ff0b4e0e5989fe8",
+      "txHash": "0x367533a14c2ec5646513d90ee9fb0f77f67aadca3512d49becbde3285d367cbe",
+      "verified": false
+    },
+    "BondCalculator": {
+      "address": "0x560cf27f6f100bb48f9b66c3cf7d6b1e10991e82",
+      "txHash": "0x8dfd78f9096ec1fb62b6a7e37ee0d0ffd0a4f8e770a8da1676d5680ac2cf3ecf",
+      "verified": false
+    },
+    "BondEscrow": {
+      "address": "0xc174735e2d8f2f50160ec1fa5a5db2d40f4b2361",
+      "txHash": "0x25c9a3886fa428346e7b15fb79685725f34a084a50394088a3fdc1ce13b21f5b",
+      "verified": false
+    },
+    "ClaimRegistry": {
+      "address": "0x4018c2cdc76d2282caabc40ab4fa16f3cca9f866",
+      "txHash": "0xabc61a9dbbe6819fc14405b8a53654f0b8f06614b98ae28f9065931db647a432",
+      "verified": false
+    },
+    "NoveltyGate": {
+      "address": "0xb38b86daace36abfef0ef35f94fd031d5a726814",
+      "txHash": "0x3a65ba0adeaab373c5bc7c9b5826af7c3f80fc95793d4ca701ac86a8123c0a26",
+      "verified": false
+    },
+    "ChallengeWindow": {
+      "address": "0x596639e733dd9263ccfbce38f857688b40bb4c87",
+      "txHash": "0x048e84a9b539e8608962996161f1bd8c78f589e6d17c1d51c92effdf10dd030d",
+      "verified": false
+    },
+    "ConfidenceScorer": {
+      "address": "0xfa0159c771837741c40c04247849a2655cae58d2",
+      "txHash": "0x6b9ae0c7f9fa0aefa155367927ac1b9e1e08c0f3fc53d1f9dcc26584a77adbd2",
+      "verified": false
+    },
+    "OracleRouter": {
+      "address": "0x4e9932c37e43cfcb973e00fc621973660a530e57",
+      "txHash": "0x157d68243336d7210bd9aa59fa704b6a10b49026e6cba6fae4a0ad534f7a352f",
+      "verified": false
+    },
+    "InternalVote": {
+      "address": "0x2e62f06f3a1d7028cc5182790d235667fb45ca53",
+      "txHash": "0x094eba2dc943bfbccab51c2f3ed51352903951c2e6d52c50c1178e0b908e5050",
+      "verified": false
+    },
+    "EmissionController": {
+      "address": "0xe187aceaf04b9c791f58ba1de3a4342a92e7482b",
+      "txHash": "0x18626c648c9a20b8495128c218a28ae35ed0a8e646b4e9e23d1a62417daff3c2",
+      "verified": false
+    },
+    "TimelockController": {
+      "address": "0x41ec445a15cd2edc02cff9940c63fe0d8c34c32a",
+      "txHash": "0x484b8761acb38641b342d299f3a2dc21bf72819dd4e3b2928854cc1f9f6902dc",
+      "verified": false
+    },
+    "GovernorPlot": {
+      "address": "0x401854394c7ced31982d80c0d4f635fccf190280",
+      "txHash": "0x5f9d840de9e30fdd2938698141d45ef3b75983374b8e3dcc29b442200069fbc6",
+      "verified": false
+    },
+    "Treasury": {
+      "address": "0x7a3aa7133d6b0442d9db02d457cc87400b2423d8",
+      "txHash": "0xa06bbaafeecdc0d08fb3ee9ae305c3a529fa8e174e067d742101cec96eb52047",
+      "verified": false
+    }
+  },
+  "rolesWired": true,
+  "adminHandedOff": false
+}

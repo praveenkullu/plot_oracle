@@ -47,6 +47,26 @@ With Ledger hardware wallet (mainnet):
   -vvvv
 ```
 
+## Set Testnet Bond Rates
+
+Lower all domain base bonds to 1 USDC for e2e testing (testnet only).
+The contract caps each `setDomainBaseBond` call at ±25%, so the script iterates
+down in 25%-steps automatically (~130 transactions total).
+
+```bash
+cd contracts
+set -a && source ../.env && set +a
+forge script script/SetTestnetBonds.s.sol \
+  --rpc-url "$BASE_RPC_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast -vv
+```
+
+Requires `GOVERNANCE_ROLE` on `BondCalculator` (held by the deployer wallet by default).
+**Do not run on mainnet.**
+
+---
+
 ## Wire Roles
 
 ```bash
