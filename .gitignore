@@ -1,2 +1,18 @@
 .env
 .env.example
+
+# Ponder indexer runtime data
+indexer/.ponder/
+
+# Node / Bun
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Foundry build artifacts
+contracts/out/
+contracts/cache/
