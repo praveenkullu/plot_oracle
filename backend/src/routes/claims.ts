@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { ethers } from 'ethers';
-import { claimRegistry, noveltyGate, bondCalculator, usdc, BOND_ESCROW_ADDRESS, signer } from '../lib/contracts.js';
+import { claimRegistry, noveltyGate, challengeWindow, bondCalculator, usdc, BOND_ESCROW_ADDRESS, signer } from '../lib/contracts.js';
 import { checkNovelty, storeEmbedding } from '../lib/sns.js';
 import { env } from '../lib/env.js';
 
@@ -89,6 +89,10 @@ router.post('/', async (req: Request, res: Response) => {
         justHash,
       );
       await noTx.wait();
+
+      // Open challenge window (permissionless, required for claim to become Verified)
+      const owTx = await challengeWindow.openWindow(claimId);
+      await owTx.wait();
 
       // Store embedding for future novelty checks
       await storeEmbedding(claimId, claim_text, domainCode, contentHash).catch((err: Error) =>

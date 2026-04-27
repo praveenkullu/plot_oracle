@@ -155,10 +155,10 @@ chain_claim=$(curl -fsS --max-time 10 "$API_URL/claims/$claim_id" 2>/dev/null ||
 echo "  On-chain read: $chain_claim"
 
 chain_status=$(echo "$chain_claim" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "")
-if [[ "$chain_status" == "Submitted" ]]; then
+if [[ "$chain_status" == "Submitted" || "$chain_status" == "Pending" ]]; then
   ok "On-chain status: $chain_status"
 else
-  fail "Unexpected on-chain status: '$chain_status' (expected 'Submitted')"
+  fail "Unexpected on-chain status: '$chain_status' (expected 'Submitted' or 'Pending')"
 fi
 
 # ── 4. Verify in Ponder indexer ───────────────────────────────────────────────

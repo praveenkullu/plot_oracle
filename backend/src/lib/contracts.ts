@@ -42,4 +42,10 @@ const ERC20_ABI = [
 
 export const usdc = new ethers.Contract(env.USDC_ADDRESS, ERC20_ABI, signer ?? provider);
 
+export const challengeWindow = new ethers.Contract(
+  env.CHALLENGE_WINDOW_ADDRESS,
+  loadAbi('ChallengeWindow'),
+  signer ?? provider,
+);
+
 export const BOND_ESCROW_ADDRESS = env.BOND_ESCROW_ADDRESS;

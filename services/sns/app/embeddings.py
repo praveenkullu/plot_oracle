@@ -68,16 +68,16 @@ class SNSEmbeddingService(EmbeddingService):
 
     def search(self, vector: list[float], domain: Domain, top_k: int = 1) -> list[ScoredHit]:
         from qdrant_client.models import Filter, FieldCondition, MatchValue
-        hits = self._client.search(
+        results = self._client.query_points(
             collection_name=settings.collection_name,
-            query_vector=vector,
+            query=vector,
             query_filter=Filter(
                 must=[FieldCondition(key="domain", match=MatchValue(value=domain.value))]
             ),
             limit=top_k,
             with_payload=True,
         )
-        return [ScoredHit(h.score, h.payload) for h in hits]
+        return [ScoredHit(h.score, h.payload) for h in results.points]
 
     def upsert(self, claim_id: str, vector: list[float], domain: Domain, content_hash: str) -> None:
         from qdrant_client.models import PointStruct

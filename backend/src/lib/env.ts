@@ -17,6 +17,7 @@ export const env = {
   NOVELTY_GATE_ADDRESS: required('NOVELTY_GATE_ADDRESS') as `0x${string}`,
   BOND_CALCULATOR_ADDRESS: required('BOND_CALCULATOR_ADDRESS') as `0x${string}`,
   BOND_ESCROW_ADDRESS: required('BOND_ESCROW_ADDRESS') as `0x${string}`,
+  CHALLENGE_WINDOW_ADDRESS: required('CHALLENGE_WINDOW_ADDRESS') as `0x${string}`,
   USDC_ADDRESS: required('USDC_ADDRESS') as `0x${string}`,
   SNS_SERVICE_URL: process.env.SNS_SERVICE_URL ?? 'http://localhost:8000',
   PONDER_URL: process.env.PONDER_URL ?? 'http://localhost:42069',
