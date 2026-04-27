@@ -128,11 +128,21 @@ OracleRouter ◄────── InternalVote  (executes resolution)
 ```
 plot_oracle/
 ├── contracts/                  # Solidity contracts (Foundry)
-│   ├── src/                    # All 12 production contracts
+│   ├── src/                    # All 13 production contracts
 │   ├── test/                   # Foundry test files (138 tests)
-│   ├── script/                 # Deployment scripts (TODO)
+│   ├── script/                 # Foundry deployment scripts (Deploy, WireRoles, SetTestnetBonds)
 │   ├── lib/                    # OpenZeppelin + Chainlink
 │   └── foundry.toml            # Forge config, RPC endpoints, Etherscan keys
+├── backend/                    # Node.js / Express REST API (TypeScript)
+│   ├── src/
+│   │   ├── index.ts            # Express app + /health
+│   │   ├── lib/
+│   │   │   ├── env.ts          # Typed env vars
+│   │   │   ├── contracts.ts    # ethers provider + contract instances
+│   │   │   └── sns.ts          # SNS HTTP client
+│   │   └── routes/
+│   │       └── claims.ts       # POST/GET /claims handlers
+│   └── package.json
 ├── services/
 │   └── sns/                    # Python FastAPI — Semantic Novelty Service
 │       ├── app/
@@ -143,10 +153,31 @@ plot_oracle/
 │       │   └── routers/
 │       │       └── novelty.py  # /novelty/check and /novelty/embed endpoints
 │       └── tests/              # Pytest suite
-├── ecosystem.config.cjs        # PM2 process manager config
+├── indexer/                    # Ponder event indexer (TypeScript)
+│   ├── ponder.config.ts        # Network, contract addresses, ABIs
+│   ├── ponder.schema.ts        # onchainTable schema (Drizzle ORM)
+│   └── src/index.ts            # Event handlers
+├── scripts/
+│   ├── deploy/                 # Phase 1–5 deployment automation (bash)
+│   │   ├── phase1-prereqs.sh
+│   │   ├── phase2-deploy-contracts.sh
+│   │   ├── phase3-wire-roles.sh
+│   │   ├── phase4-services.sh
+│   │   ├── phase5-mainnet.sh
+│   │   └── smoke-test.sh
+│   ├── keepers/                # Keeper automation (bash)
+│   │   ├── finalize-claims.sh  # finalizeUnchallenged + releaseSubmitterBond
+│   │   ├── record-snapshots.sh # EmissionController price snapshots
+│   │   └── run-keeper-loop.sh  # Testnet demo polling loop
+│   └── test/
+│       └── e2e-claim.sh        # Full end-to-end claim pipeline test
+├── deployments/
+│   └── base_sepolia.json       # Deployed contract addresses (auto-written by phase2)
+├── ecosystem.config.cjs        # PM2 process manager config (all 3 services)
 ├── IMPLEMENTATION_PLAN.md      # Original design spec
 └── docs/                       # This documentation
     ├── README.md               # This file
     ├── modules/                # Per-module deep dives
-    └── deployment/             # Deployment guides
+    ├── services/               # Off-chain service docs (API, SNS, Indexer, Keepers)
+    └── deployment/             # Deployment guides (phases 1–5 + manual reference)
 ```

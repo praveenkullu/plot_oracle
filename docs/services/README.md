@@ -7,6 +7,7 @@ Plot Protocol has three off-chain service layers that complement the on-chain co
 | **SNS** — Semantic Novelty Service | 8000 | Python + FastAPI | Compute semantic similarity; filter duplicate claims |
 | **API** — REST & Event Processor | 3000 | Node.js + TypeScript + Express | Submit claims, query state, relay novelty results on-chain |
 | **Indexer** — Event Indexer | 42069 | Ponder.sh | Index Base L2 events; power the API query layer |
+| **Keepers** — Claim Finalization | n/a | Bash + cast | Finalize expired windows; release submitter bonds |
 
 ## How They Fit Together
 
@@ -45,6 +46,7 @@ User / AI Agent
 - [SNS Service](sns.md) — Semantic Novelty Service (implemented, running on port 8000)
 - [Node.js API](api.md) — REST API and on-chain relay (implemented, running on port 3000)
 - [Ponder Indexer](indexer.md) — Event indexer (implemented, running on port 42069)
+- [Keeper Scripts](keepers.md) — Claim finalization and bond release automation
 
 ## Running Locally
 

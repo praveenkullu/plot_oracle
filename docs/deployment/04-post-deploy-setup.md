@@ -35,12 +35,22 @@ bash scripts/keepers/record-snapshots.sh --network base_mainnet --interval 24h
 bash scripts/keepers/record-snapshots.sh --network base_mainnet --interval 7d
 
 # Every 5 min (cron: */5 * * * *)
-bash scripts/keepers/finalize-claims.sh --network base_mainnet --max-claims 50
+bash scripts/keepers/finalize-claims.sh --network base_mainnet
 ```
 
-Requires `OPERATOR_PRIVATE_KEY` in `.env`. The finalize script iterates backwards from
-the latest claim, checks for expired unchallenged windows, and calls
-`finalizeUnchallenged()` + `releaseSubmitterBond()` in sequence.
+For the **testnet demo**, use the continuous polling loop instead of cron:
+
+```bash
+# Runs finalize-claims every 60s until Ctrl+C
+bash scripts/keepers/run-keeper-loop.sh --network base_sepolia --interval 60
+```
+
+`finalize-claims.sh` requires `OPERATOR_PRIVATE_KEY` in `.env` (falls back to `PRIVATE_KEY` on testnet).
+It queries the Ponder GraphQL API to find expired unchallenged windows and Verified claims with
+locked bonds, then calls `ChallengeWindow.finalizeUnchallenged(bytes32)` and
+`OracleRouter.releaseSubmitterBond(bytes32)` for each.
+
+See [docs/services/keepers.md](../services/keepers.md) for full script reference.
 
 ---
 

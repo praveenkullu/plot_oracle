@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TITLE
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="title" value="Plot Oracle — Blockchain Truth Verification Protocol"
+      style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=22;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="200" y="16" width="900" height="38" as="geometry" />
+    </mxCell>
+    <mxCell id="subtitle" value="Base L2 (Base Sepolia testnet · chainId 84532) · 13 contracts · 3 off-chain services · deploy block 40666128"
+      style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;"
+      vertex="1" parent="1">
+      <mxGeometry x="200" y="54" width="900" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         STATUS / WORK DONE BOX (top-right)
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="status_bg" value=""
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="1080" y="10" width="560" height="450" as="geometry" />
+    </mxCell>
+    <mxCell id="status_title" value="Project Status &amp; Work Done"
+      style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="1090" y="16" width="540" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="status_done" value="&lt;b&gt;✅ Complete (Testnet)&lt;/b&gt;&lt;br/&gt;
+• 13 Solidity contracts written, tested (138 tests), deployed &amp; verified on Base Sepolia&lt;br/&gt;
+• Role bindings wired across all 13 contracts (12 AccessControl grants)&lt;br/&gt;
+• Backend API (Express/TS): POST /claims full pipeline, GET /claims, GET /claims/:id&lt;br/&gt;
+• SNS Service (FastAPI/Python): sentence-transformer embeddings + Qdrant cosine similarity&lt;br/&gt;
+• Ponder Indexer: indexes 5 contracts, GraphQL at :42069/graphql, PGlite storage&lt;br/&gt;
+• PM2 orchestration: 3 services online, health-checked, ecosystem.config.cjs&lt;br/&gt;
+• E2E claim test: 7/7 passing (POST → on-chain → Ponder index verified 2026-04-27)&lt;br/&gt;
+• Deployment scripts: phase1–phase4 automated bash scripts&lt;br/&gt;
+• SetTestnetBonds.s.sol: iterative step-down from 100–2500 USDC → 1 USDC&lt;br/&gt;
+• Bond auto-approve: relay wallet USDC approval wired in backend&lt;br/&gt;
+• Testnet soak period: clock started 2026-04-25 (1-week minimum)"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;verticalAlign=top;spacingLeft=8;"
+      vertex="1" parent="1">
+      <mxGeometry x="1090" y="44" width="540" height="210" as="geometry" />
+    </mxCell>
+    <mxCell id="status_pending" value="&lt;b&gt;⏳ In Progress / Pending&lt;/b&gt;&lt;br/&gt;
+• Gnosis Safe multisigs (admin + foundation) — pre-mainnet, safe.global&lt;br/&gt;
+• DEFAULT_ADMIN_ROLE handoff from deployer → Gnosis Safe (all 13 contracts)&lt;br/&gt;
+• Mainnet deployment (Base Mainnet) — after 1-week soak&lt;br/&gt;
+• Chainlink Automation upkeeps (post-mainnet):&lt;br/&gt;
+  · finalizeUnchallenged(claimId) — ChallengeWindow keeper&lt;br/&gt;
+  · releaseSubmitterBond(claimId) — OracleRouter keeper&lt;br/&gt;
+  · recordSnapshot24h/7d() — EmissionController price oracle&lt;br/&gt;
+  · mintEmission(rewardsPool) — EmissionController operator&lt;br/&gt;
+• Chainlink PLOT/USD price feed registration (post-mainnet, data.chain.link)&lt;br/&gt;
+• Frontend / UI — challengers and voters have no interface yet&lt;br/&gt;
+• Challenger flow E2E test — ChallengeWindow dispute path untested on-chain&lt;br/&gt;
+• Governance flow test — GovernorPlot + TimelockController untested end-to-end"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;verticalAlign=top;spacingLeft=8;"
+      vertex="1" parent="1">
+      <mxGeometry x="1090" y="260" width="540" height="190" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         LEGEND
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="legend_bg" value=""
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="10" width="170" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="legend_title" value="Legend"
+      style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=11;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="12" width="170" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="leg1" value="Claim Pipeline"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="34" width="150" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg2" value="Challenge / Resolution"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="58" width="150" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg3" value="Token / Governance"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="82" width="150" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="leg4" value="Off-chain / External"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;"
+      vertex="1" parent="1">
+      <mxGeometry x="30" y="106" width="150" height="20" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ACTORS ROW
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="actor_user" value="&lt;b&gt;User / AI Agent&lt;/b&gt;&lt;br/&gt;submitter_address (EOA)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;"
+      vertex="1" parent="1">
+      <mxGeometry x="80" y="160" width="180" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="actor_keeper" value="&lt;b&gt;Operator / Keeper&lt;/b&gt;&lt;br/&gt;(Chainlink Automation post-mainnet)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;"
+      vertex="1" parent="1">
+      <mxGeometry x="760" y="160" width="260" height="60" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         OFF-CHAIN SERVICES BACKGROUND BAND
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="offchain_bg" value=""
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#555555;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="250" width="1040" height="270" as="geometry" />
+    </mxCell>
+    <mxCell id="offchain_label" value="Off-chain Services — PM2 (3 processes, all online on Base Sepolia testnet)"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="32" y="254" width="600" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- Backend API -->
+    <mxCell id="backend" value="&lt;b&gt;Backend API&lt;/b&gt;&lt;br/&gt;Express + TypeScript · Port 3000&lt;br/&gt;PM2: plot-oracle-3000&lt;br/&gt;────────────────&lt;br/&gt;POST /claims&lt;br/&gt;GET  /claims → Ponder proxy&lt;br/&gt;GET  /claims/:claimId → on-chain&lt;br/&gt;GET  /health&lt;br/&gt;────────────────&lt;br/&gt;ethers.js relay signer (PRIVATE_KEY)&lt;br/&gt;USDC auto-approve to BondEscrow&lt;br/&gt;Loads .env from parent dir"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="36" y="280" width="290" height="224" as="geometry" />
+    </mxCell>
+
+    <!-- SNS Service -->
+    <mxCell id="sns" value="&lt;b&gt;Semantic Novelty Service (SNS)&lt;/b&gt;&lt;br/&gt;FastAPI + Python · Port 8000&lt;br/&gt;PM2: plot-oracle-8000&lt;br/&gt;────────────────&lt;br/&gt;POST /novelty/check&lt;br/&gt;POST /novelty/embed&lt;br/&gt;GET  /health&lt;br/&gt;────────────────&lt;br/&gt;Model: all-MiniLM-L6-v2 (384-dim)&lt;br/&gt;Qdrant in-memory vector DB&lt;br/&gt;Cosine similarity per domain&lt;br/&gt;Classify: NOVEL / FLAGGED / DUPLICATE"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="360" y="280" width="290" height="224" as="geometry" />
+    </mxCell>
+
+    <!-- Ponder Indexer -->
+    <mxCell id="ponder" value="&lt;b&gt;Ponder Indexer&lt;/b&gt;&lt;br/&gt;Ponder 0.7.17 · Port 42069&lt;br/&gt;PM2: plot-oracle-42069&lt;br/&gt;────────────────&lt;br/&gt;POST /graphql (query claims)&lt;br/&gt;GET  /health → 200 OK&lt;br/&gt;────────────────&lt;br/&gt;Indexes: ClaimRegistry,&lt;br/&gt;  ChallengeWindow, OracleRouter,&lt;br/&gt;  InternalVote, EmissionController&lt;br/&gt;Tables: claim, challengeWindow,&lt;br/&gt;  voteRecord, emission (PGlite)&lt;br/&gt;startBlock: 40666128"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="686" y="280" width="290" height="224" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         BLOCKCHAIN BACKGROUND BAND
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="chain_bg" value=""
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fff4;strokeColor=#228b22;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="20" y="550" width="1040" height="830" as="geometry" />
+    </mxCell>
+    <mxCell id="chain_label" value="Base L2 Smart Contracts — 13 contracts · deploy block 40666128 · Base Sepolia (chainId 84532)"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontStyle=1;"
+      vertex="1" parent="1">
+      <mxGeometry x="32" y="554" width="800" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- ─── ROW 1: Claim Submission Pipeline ─── -->
+    <mxCell id="row1_label" value="Claim Submission Pipeline"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="32" y="578" width="300" height="18" as="geometry" />
+    </mxCell>
+
+    <mxCell id="claim_registry" value="&lt;b&gt;ClaimRegistry&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Core state machine&lt;br/&gt;Status transitions:&lt;br/&gt;Submitted → Pending&lt;br/&gt;→ Disputed&lt;br/&gt;→ Verified&lt;br/&gt;→ Rejected&lt;br/&gt;→ Superseded&lt;br/&gt;────────────────&lt;br/&gt;6 domains, contentHash&lt;br/&gt;duplicate detection&lt;br/&gt;contentHashToClaim()"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="36" y="600" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="bond_calc" value="&lt;b&gt;BondCalculator&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Domain base rate ×&lt;br/&gt;complexity multiplier&lt;br/&gt;────────────────&lt;br/&gt;General:    100 USDC base&lt;br/&gt;Science:    250 USDC base&lt;br/&gt;Finance:    500 USDC base&lt;br/&gt;Medical:    750 USDC base&lt;br/&gt;Regulatory: 1000 USDC&lt;br/&gt;NatSecurity:2500 USDC&lt;br/&gt;────────────────&lt;br/&gt;LOW/MED/HIGH/VERY_HIGH&lt;br/&gt;±25% governance limit"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="270" y="600" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="bond_escrow" value="&lt;b&gt;BondEscrow&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Locks USDC bonds&lt;br/&gt;Releases or slashes&lt;br/&gt;at resolution&lt;br/&gt;────────────────&lt;br/&gt;Unchallenged:&lt;br/&gt;  bond back + reward&lt;br/&gt;Submitter wins:&lt;br/&gt;  bond + slash challenger&lt;br/&gt;Challenger wins:&lt;br/&gt;  60% → challenger&lt;br/&gt;  20% → voters&lt;br/&gt;  20% → treasury"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="504" y="600" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="novelty_gate" value="&lt;b&gt;NoveltyGate&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;SNS oracle bridge&lt;br/&gt;on-chain&lt;br/&gt;────────────────&lt;br/&gt;Similarity thresholds:&lt;br/&gt;  ≥ 9500 bps → Rejected&lt;br/&gt;  9000–9499 → Flagged&lt;br/&gt;  &lt; 9000 bps → Novel&lt;br/&gt;────────────────&lt;br/&gt;SNS_ORACLE_ROLE&lt;br/&gt;submitNoveltyResult()&lt;br/&gt;→ ClaimRegistry&lt;br/&gt;  (Pending or Rejected)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="738" y="600" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <!-- ─── ROW 2: Challenge & Resolution ─── -->
+    <mxCell id="row2_label" value="Challenge &amp; Dispute Resolution"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="32" y="826" width="300" height="18" as="geometry" />
+    </mxCell>
+
+    <mxCell id="challenge_window" value="&lt;b&gt;ChallengeWindow&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Optimistic 2h window&lt;br/&gt;after claim → Pending&lt;br/&gt;Anyone may challenge&lt;br/&gt;by staking counter-bond&lt;br/&gt;────────────────&lt;br/&gt;No challenge → keeper&lt;br/&gt;  finalizeUnchallenged()&lt;br/&gt;  → Status: Verified&lt;br/&gt;Challenge filed →&lt;br/&gt;  Status: Disputed&lt;br/&gt;  → OracleRouter"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="36" y="848" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="oracle_router" value="&lt;b&gt;OracleRouter&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Dispute resolution&lt;br/&gt;executor&lt;br/&gt;────────────────&lt;br/&gt;resolveVerified:&lt;br/&gt;  releaseBond()&lt;br/&gt;  slashChallengerBond()&lt;br/&gt;resolveRejected:&lt;br/&gt;  slashBond()&lt;br/&gt;  releaseChallengerBond()&lt;br/&gt;────────────────&lt;br/&gt;releaseSubmitterBond()&lt;br/&gt;  (keeper, unchallenged)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="270" y="848" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="internal_vote" value="&lt;b&gt;InternalVote&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Weighted quorum voting&lt;br/&gt;for disputed claims&lt;br/&gt;────────────────&lt;br/&gt;VOTER_ROLE holders&lt;br/&gt;Admin sets weights&lt;br/&gt;  (default: 1 each)&lt;br/&gt;quorumWeight threshold&lt;br/&gt;────────────────&lt;br/&gt;finalizeVote()&lt;br/&gt;→ ConfidenceScorer&lt;br/&gt;→ OracleRouter&lt;br/&gt;  .executeResolution()"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="504" y="848" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <mxCell id="conf_scorer" value="&lt;b&gt;ConfidenceScorer&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Refines vote ratio&lt;br/&gt;with domain multiplier&lt;br/&gt;────────────────&lt;br/&gt;score = rawScore ×&lt;br/&gt;  domainMultiplierBps&lt;br/&gt;  / 10000&lt;br/&gt;────────────────&lt;br/&gt;General:   1.00× (10000)&lt;br/&gt;Science:   0.95× (9500)&lt;br/&gt;Finance:   0.90× (9000)&lt;br/&gt;Medical:   0.85× (8500)&lt;br/&gt;NatSec:    0.75× (7500)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="738" y="848" width="210" height="210" as="geometry" />
+    </mxCell>
+
+    <!-- ─── ROW 3: Token, Emissions & Governance ─── -->
+    <mxCell id="row3_label" value="Token, Emissions &amp; Governance"
+      style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontStyle=3;"
+      vertex="1" parent="1">
+      <mxGeometry x="32" y="1074" width="300" height="18" as="geometry" />
+    </mxCell>
+
+    <mxCell id="plot_token" value="&lt;b&gt;PLOTToken&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;ERC20Votes + Permit&lt;br/&gt;1,000,000,000 max supply&lt;br/&gt;200M minted to Treasury&lt;br/&gt;  at deploy&lt;br/&gt;────────────────&lt;br/&gt;MINTER_ROLE:&lt;br/&gt;  EmissionController&lt;br/&gt;SLASHER_ROLE:&lt;br/&gt;  BondEscrow&lt;br/&gt;Governance voting token"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="36" y="1096" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <mxCell id="emission_ctrl" value="&lt;b&gt;EmissionController&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Decreasing PLOT emissions&lt;br/&gt;Year 0: 100%&lt;br/&gt;Year 1: 80%&lt;br/&gt;Year 2: 60%&lt;br/&gt;Year 3: 40%&lt;br/&gt;Year 4+: 20% (floor)&lt;br/&gt;Max: 50M PLOT/year&lt;br/&gt;────────────────&lt;br/&gt;Chainlink circuit breakers:&lt;br/&gt;  24h drop &gt;30% → pause 48h&lt;br/&gt;  7d drop &gt;60% → emergency&lt;br/&gt;mintEmission(rewardsPool)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="270" y="1096" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <mxCell id="governor" value="&lt;b&gt;GovernorPlot&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;PLOT-weighted governance&lt;br/&gt;67% supermajority required&lt;br/&gt;14-day voting period&lt;br/&gt;────────────────&lt;br/&gt;OpenZeppelin Governor&lt;br/&gt;+ GovernorSettings&lt;br/&gt;+ GovernorVotes&lt;br/&gt;+ GovernorVotesQuorumFraction&lt;br/&gt;+ GovernorTimelockControl&lt;br/&gt;────────────────&lt;br/&gt;Governs: BondCalculator&lt;br/&gt;  bond rates (±25% limit)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="504" y="1096" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <mxCell id="timelock" value="&lt;b&gt;TimelockController&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;OpenZeppelin Timelock&lt;br/&gt;Proposal execution delay&lt;br/&gt;────────────────&lt;br/&gt;PROPOSER_ROLE: Governor&lt;br/&gt;EXECUTOR_ROLE: Treasury&lt;br/&gt;────────────────&lt;br/&gt;Queues proposals from&lt;br/&gt;GovernorPlot before&lt;br/&gt;execution, enforcing&lt;br/&gt;time delay on all&lt;br/&gt;protocol parameter changes"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="738" y="1096" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <mxCell id="treasury" value="&lt;b&gt;Treasury&lt;/b&gt;&lt;br/&gt;────────────────&lt;br/&gt;Holds USDC fee revenue&lt;br/&gt;Buybacks capped at&lt;br/&gt;  10% of balance/call&lt;br/&gt;────────────────&lt;br/&gt;EXECUTOR_ROLE: Timelock&lt;br/&gt;FOUNDATION_ROLE: veto&lt;br/&gt;  (first 2 years, 730 days)&lt;br/&gt;vetoExpiresAt: deploy+730d&lt;br/&gt;────────────────&lt;br/&gt;Holds 200M PLOT&lt;br/&gt;  minted at deploy"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;verticalAlign=top;align=left;spacingLeft=6;"
+      vertex="1" parent="1">
+      <mxGeometry x="36" y="1330" width="210" height="200" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EXTERNAL SYSTEMS
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="chainlink_feed" value="&lt;b&gt;Chainlink Price Feed&lt;/b&gt;&lt;br/&gt;PLOT/USD&lt;br/&gt;AggregatorV3Interface&lt;br/&gt;(register post-mainnet)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;strokeWidth=2;strokeDash=5;"
+      vertex="1" parent="1">
+      <mxGeometry x="270" y="1330" width="210" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="arweave" value="&lt;b&gt;Arweave&lt;/b&gt;&lt;br/&gt;Permanent claim content storage&lt;br/&gt;contentHash on-chain;&lt;br/&gt;full text off-chain"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="504" y="1330" width="210" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="usdc_token" value="&lt;b&gt;USDC (Base L2)&lt;/b&gt;&lt;br/&gt;ERC20 · 6 decimals&lt;br/&gt;Bond &amp; fee currency&lt;br/&gt;used by BondEscrow"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;"
+      vertex="1" parent="1">
+      <mxGeometry x="738" y="1330" width="210" height="80" as="geometry" />
+    </mxCell>
+
+    <mxCell id="gnosis_safe" value="&lt;b&gt;Gnosis Safe (pre-mainnet)&lt;/b&gt;&lt;br/&gt;Admin + Foundation multisigs&lt;br/&gt;DEFAULT_ADMIN_ROLE handoff&lt;br/&gt;from deployer wallet (pending)"
+      style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;dashed=1;strokeWidth=2;"
+      vertex="1" parent="1">
+      <mxGeometry x="270" y="1430" width="210" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EDGES — Claim Submission Flow
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- User → Backend (submit claim) -->
+    <mxCell id="e_user_backend" value="POST /claims&lt;br/&gt;GET /claims"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;"
+      edge="1" source="actor_user" target="backend" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → BondCalculator -->
+    <mxCell id="e_back_bondcalc" value="calculateBond(&lt;br/&gt;domain, complexityBps)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="backend" target="bond_calc" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → ClaimRegistry -->
+    <mxCell id="e_back_registry" value="submitClaim()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="backend" target="claim_registry" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → SNS -->
+    <mxCell id="e_back_sns" value="POST /novelty/check&lt;br/&gt;POST /novelty/embed"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="backend" target="sns" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → NoveltyGate (relay result) -->
+    <mxCell id="e_back_noveltygate" value="submitNoveltyResult()&lt;br/&gt;(relay signer)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="backend" target="novelty_gate" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → Ponder (GET /claims proxy) -->
+    <mxCell id="e_back_ponder" value="proxy GraphQL&lt;br/&gt;(GET /claims)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="backend" target="ponder" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ClaimRegistry → BondEscrow (lockBond on submitClaim) -->
+    <mxCell id="e_registry_escrow" value="lockBond()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="claim_registry" target="bond_escrow" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- NoveltyGate → ClaimRegistry -->
+    <mxCell id="e_novelty_registry" value="setNoveltyResult()&lt;br/&gt;→ Pending | Rejected"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="novelty_gate" target="claim_registry" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Ponder ← ClaimRegistry (events, dashed) -->
+    <mxCell id="e_registry_ponder" value="ClaimSubmitted,&lt;br/&gt;StatusChanged events"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;dashed=1;endArrow=open;endFill=0;"
+      edge="1" source="claim_registry" target="ponder" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EDGES — Challenge & Resolution Flow
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- ChallengeWindow → ClaimRegistry (markDisputed / resolveUnchallenged) -->
+    <mxCell id="e_challenge_registry" value="markDisputed()&lt;br/&gt;resolveUnchallenged()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="challenge_window" target="claim_registry" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ChallengeWindow → OracleRouter (on dispute) -->
+    <mxCell id="e_challenge_router" value="on challenge filed"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="challenge_window" target="oracle_router" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- OracleRouter → InternalVote -->
+    <mxCell id="e_router_vote" value="triggerVote(claimId)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="oracle_router" target="internal_vote" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- InternalVote → ConfidenceScorer -->
+    <mxCell id="e_vote_scorer" value="score(rawScore, domain)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="internal_vote" target="conf_scorer" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- InternalVote → OracleRouter (executeResolution) -->
+    <mxCell id="e_vote_router" value="executeResolution(&lt;br/&gt;verified, score)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="internal_vote" target="oracle_router" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="609" y="1100" />
+          <mxPoint x="375" y="1100" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- OracleRouter → BondEscrow (release/slash) -->
+    <mxCell id="e_router_escrow" value="release / slash USDC"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="oracle_router" target="bond_escrow" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- OracleRouter → ClaimRegistry (update status) -->
+    <mxCell id="e_router_registry" value="resolveVerified()&lt;br/&gt;resolveRejected()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="oracle_router" target="claim_registry" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Keeper → ChallengeWindow -->
+    <mxCell id="e_keeper_challenge" value="finalizeUnchallenged(claimId)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="actor_keeper" target="challenge_window" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Keeper → OracleRouter (releaseSubmitterBond) -->
+    <mxCell id="e_keeper_router" value="releaseSubmitterBond(claimId)&lt;br/&gt;recordSnapshot24h/7d()&lt;br/&gt;checkCircuitBreaker()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="actor_keeper" target="oracle_router" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Ponder ← ChallengeWindow events -->
+    <mxCell id="e_challenge_ponder" value="WindowOpened,&lt;br/&gt;ChallengeFiled events"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;dashed=1;endArrow=open;endFill=0;"
+      edge="1" source="challenge_window" target="ponder" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EDGES — Token, Emissions & Governance
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- EmissionController → PLOTToken -->
+    <mxCell id="e_emission_plot" value="mintEmission(rewardsPool)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="emission_ctrl" target="plot_token" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- PLOTToken → GovernorPlot (voting power) -->
+    <mxCell id="e_plot_governor" value="voting power (ERC20Votes)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="plot_token" target="governor" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- GovernorPlot → TimelockController -->
+    <mxCell id="e_governor_timelock" value="queue proposals"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="governor" target="timelock" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- TimelockController → BondCalculator (governance execution) -->
+    <mxCell id="e_timelock_bondcalc" value="execute (setDomainBaseBond)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="timelock" target="bond_calc" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="843" y="1460" />
+          <mxPoint x="375" y="1460" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- TimelockController → Treasury -->
+    <mxCell id="e_timelock_treasury" value="execute (withdraw, buyback)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="timelock" target="treasury" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- BondEscrow → Treasury (20% slash fees) -->
+    <mxCell id="e_escrow_treasury" value="slash fees (20%)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="bond_escrow" target="treasury" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- EmissionController → Chainlink -->
+    <mxCell id="e_emission_chainlink" value="getPriceFeed()&lt;br/&gt;latestRoundData()"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="emission_ctrl" target="chainlink_feed" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- BondEscrow → USDC -->
+    <mxCell id="e_escrow_usdc" value="transferFrom / transfer"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;"
+      edge="1" source="bond_escrow" target="usdc_token" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Gnosis Safe → Treasury (admin handoff, dashed) -->
+    <mxCell id="e_safe_treasury" value="DEFAULT_ADMIN_ROLE handoff&lt;br/&gt;(pre-mainnet)"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;dashed=1;"
+      edge="1" source="gnosis_safe" target="treasury" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Ponder ← InternalVote events -->
+    <mxCell id="e_vote_ponder" value="VoteCast, VoteFinalized"
+      style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=9;html=1;dashed=1;endArrow=open;endFill=0;"
+      edge="1" source="internal_vote" target="ponder" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

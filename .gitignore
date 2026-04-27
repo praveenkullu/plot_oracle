@@ -3,6 +3,8 @@
 
 # Ponder indexer runtime data
 indexer/.ponder/
+indexer/.observer.lock
+.observer.lock
 
 # Node / Bun
 node_modules/
