@@ -1,5 +1,4 @@
 import { ponder } from "@/generated";
-import { eq } from "drizzle-orm";
 import * as schema from "../ponder.schema";
 
 const STATUS_NAMES = ["Submitted", "Pending", "Disputed", "Verified", "Rejected", "Superseded"];
@@ -99,10 +98,7 @@ ponder.on("InternalVote:VoteOpened", async ({ event, context }) => {
 });
 
 ponder.on("InternalVote:VoteCast", async ({ event, context }) => {
-  const [existing] = await context.db
-    .select()
-    .from(schema.voteRecord)
-    .where(eq(schema.voteRecord.id, event.args.claimId));
+  const existing = await context.db.find(schema.voteRecord, { id: event.args.claimId });
   if (!existing) return;
 
   if (event.args.support) {
