@@ -99,7 +99,7 @@ router.get('/', async (req: Request, res: Response) => {
   const whereClause = where.length > 0 ? `, where: { ${where.join(', ')} }` : '';
 
   const query = `{
-    claims(limit: ${Math.min(Number(limit), 100)}, offset: ${Number(offset)}${whereClause}) {
+    claims(limit: ${Math.min(Number(limit), 100)}${whereClause}) {
       items { id submitter bond status selfDeclaredDomain confidenceScore submittedAt noveltyPassed }
       totalCount
     }
