@@ -19,7 +19,7 @@ Read in this order:
 
 Then read:
 - **[Deployment Guide](deployment/README.md)** — how to deploy to Base Sepolia / Mainnet
-- **[Off-Chain Services](services/README.md)** — SNS (Python FastAPI), Node.js API, Ponder indexer
+- **[Off-Chain Services](services/README.md)** — Node.js API, Ponder indexer
 
 ---
 
@@ -42,7 +42,6 @@ Layer 1: On-Chain (Base L2)
 
 Layer 2: Off-Chain
   — Full claim text, evidence, rationales stored on Arweave (permanent)
-  — Semantic novelty detection (Python service + Qdrant vector DB)
   — Event indexing (Ponder) and API (Node.js)
 ```
 
@@ -55,16 +54,12 @@ Submitter posts claim
 [ClaimRegistry] submitClaim()
   ├── Bond locked in BondEscrow (USDC)
   ├── Status: Submitted
-  └── contentHash deduplicated (Layer 1 novelty)
+  └── contentHash deduplicated (Layer 1 novelty — reverts on exact duplicate)
        │
        ▼
-[SNS Service] off-chain semantic check
+[NoveltyGate] submitNoveltyResult()  [passthrough — always novel]
+  └── Status: Pending
        │
-       ▼
-[NoveltyGate] submitNoveltyResult()
-  ├── similarity < 0.90 → passes → Status: Pending
-  └── similarity ≥ 0.90 → fails → Status: Rejected (bond returned)
-       │ (passes)
        ▼
 [ChallengeWindow] openWindow()
   ├── 2-hour window for anyone to dispute

@@ -19,7 +19,6 @@ export const env = {
   BOND_ESCROW_ADDRESS: required('BOND_ESCROW_ADDRESS') as `0x${string}`,
   CHALLENGE_WINDOW_ADDRESS: required('CHALLENGE_WINDOW_ADDRESS') as `0x${string}`,
   USDC_ADDRESS: required('USDC_ADDRESS') as `0x${string}`,
-  SNS_SERVICE_URL: process.env.SNS_SERVICE_URL ?? 'http://localhost:8000',
   PONDER_URL: process.env.PONDER_URL ?? 'http://localhost:42069',
   PRIVATE_KEY: process.env.PRIVATE_KEY,
 } as const;

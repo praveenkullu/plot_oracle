@@ -127,31 +127,7 @@ echo ""
 echo "=== [2/6] Submitting test claim ==="
 
 TIMESTAMP=$(date +%s)
-IDX=$(( TIMESTAMP % 20 ))
-# 20 semantically distinct facts across different domains to avoid SNS duplicate detection
-FACTS=(
-  "The Amazon River discharges approximately 209,000 cubic metres of water per second into the Atlantic Ocean, more than any other river on Earth."
-  "Photosynthesis converts carbon dioxide and water into glucose using chlorophyll as the primary light-absorbing pigment in plant cells."
-  "The human genome contains approximately 3 billion base pairs encoding roughly 20,000 protein-coding genes across 23 chromosome pairs."
-  "Bitcoin's proof-of-work algorithm SHA-256 requires miners to find a nonce that produces a hash below the current difficulty target."
-  "The Treaty of Westphalia signed in 1648 established the principle of state sovereignty that underpins modern international law."
-  "General relativity predicts that massive objects curve spacetime, causing gravitational lensing observable in astronomical surveys."
-  "The Krebs cycle generates three NADH and one FADH2 per acetyl-CoA molecule metabolised in the mitochondrial matrix."
-  "Ethereum transitioned from proof-of-work to proof-of-stake consensus in September 2022, reducing energy consumption by 99 percent."
-  "DNA replication proceeds in the 5 prime to 3 prime direction and requires primase to synthesise short RNA primers."
-  "The Federal Reserve sets the federal funds rate to target price stability and maximum employment as its dual mandate."
-  "Jupiter's Great Red Spot is an anticyclonic storm system that has persisted for at least 350 years in the planet's atmosphere."
-  "mRNA vaccines encode spike protein instructions that train the immune system without introducing live viral material."
-  "The Dodd-Frank Act of 2010 established the Consumer Financial Protection Bureau to regulate financial products and services."
-  "Superposition in quantum mechanics allows a qubit to exist simultaneously in zero and one states until measured."
-  "The Coriolis effect causes cyclones to rotate counterclockwise in the Northern Hemisphere and clockwise in the Southern."
-  "CRISPR-Cas9 uses a guide RNA sequence to direct the Cas9 enzyme to a specific DNA locus for targeted gene editing."
-  "Inflation erodes purchasing power over time; a central bank targets two percent annual inflation for economic stability."
-  "The stratospheric ozone layer absorbs ultraviolet B radiation that would otherwise cause DNA damage in living organisms."
-  "Neural networks trained via backpropagation minimise a loss function by adjusting weights proportional to their gradient."
-  "Continental drift is driven by convection currents in the mantle moving tectonic plates at roughly 2.5 centimetres per year."
-)
-CLAIM_TEXT="Adversarial dispute test at ${TIMESTAMP} (run ${IDX}): ${FACTS[$IDX]}"
+CLAIM_TEXT="Adversarial dispute test ${TIMESTAMP}: claim text for e2e dispute path validation."
 
 response=$(curl -fsS --max-time 30 \
   -X POST "$API_URL/claims" \
@@ -196,7 +172,7 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
     break
   fi
   if [[ "$chain_status" == "Rejected" ]]; then
-    fail "Claim was rejected by SNS (duplicate claim text) — use a unique claim_text"
+    fail "Claim unexpectedly rejected before challenge window — check backend logs"
     exit 1
   fi
 done

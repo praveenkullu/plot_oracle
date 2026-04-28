@@ -1,6 +1,7 @@
 const ROOT = __dirname;
 
 module.exports = {
+  // plot-oracle-8000 (SNS) removed; duplicate detection delegated to challengers.
   apps: [
     {
       name: 'plot-oracle-3000',
@@ -9,13 +10,6 @@ module.exports = {
       args: 'src/index.ts',
       interpreter: 'node',
       env: { NODE_ENV: 'development', PORT: '3000' }
-    },
-    {
-      name: 'plot-oracle-8000',
-      cwd: `${ROOT}/services/sns`,
-      script: 'start.cjs',
-      interpreter: 'node',
-      env: { PYTHONUNBUFFERED: '1' }
     },
     {
       name: 'plot-oracle-42069',

@@ -6,7 +6,7 @@
 
 ## Abstract
 
-The proliferation of AI-generated content and viral misinformation has outpaced manual fact-checking at scale. Plot Protocol addresses this with a blockchain-native truth verification system deployed on Base L2 in which economic incentives — rather than trusted intermediaries — enforce claim quality. Submitters stake USDC bonds that are slashed if their claims are challenged and found false; challengers earn from correctly identified false claims; voters earn fees for correct dispute adjudication. A semantic novelty service filters paraphrase duplicates before they enter the verification pipeline. This paper describes the protocol design, its six core modules, a live testnet deployment of 13 smart contracts on Base Sepolia, and end-to-end validation of both the unchallenged and adversarial claim paths.
+The proliferation of AI-generated content and viral misinformation has outpaced manual fact-checking at scale. Plot Protocol addresses this with a blockchain-native truth verification system deployed on Base L2 in which economic incentives — rather than trusted intermediaries — enforce claim quality. Submitters stake USDC bonds that are slashed if their claims are challenged and found false; challengers earn from correctly identified false claims; voters earn fees for correct dispute adjudication. Paraphrase duplicates are surfaced by the same challenger market that polices factual error: a challenger citing an existing verified claim wins the duplicate's slashed bond, eliminating a dedicated novelty oracle. This paper describes the protocol design, its six core modules, a live testnet deployment of 13 smart contracts on Base Sepolia, and end-to-end validation of both the unchallenged and adversarial claim paths.
 
 ---
 
@@ -17,7 +17,7 @@ Fact-checking organisations are bottlenecked by human reviewers who cannot match
 Plot Protocol contributes three things:
 
 1. **An optimistic challenge mechanism** that accepts claims by default while allowing any participant to dispute them under economic penalty, producing Verified or Rejected outcomes without a standing reviewer workforce.
-2. **A semantic novelty filter** that uses sentence-transformer embeddings and vector similarity search to reject paraphrase duplicates before they consume verification resources.
+2. **A unified challenger market** that handles both factual disputes and paraphrase duplicates under a single bond-and-slash mechanism, eliminating the need for a centralised semantic-similarity oracle.
 3. **A permanently archived, confidence-scored record** of every claim outcome, written immutably to Arweave with a verifiable on-chain pointer.
 
 The protocol is deployed on Base L2 for native Circle-minted USDC (no bridge risk), low transaction costs ($0.001–$0.01), and compatibility with EAS, Chainlink, and UMA.
@@ -36,7 +36,6 @@ Layer 1 — On-Chain (Base L2)
 
 Layer 2 — Off-Chain
   Full claim text and evidence on Arweave (permanent, content-addressed).
-  Semantic novelty detection (Python + Qdrant vector DB).
   Event indexing (Ponder) and REST API (Node.js/Express).
 ```
 
@@ -45,11 +44,9 @@ Layer 2 — Off-Chain
 ```
 submitClaim()
      │  Bond locked (USDC), status = Submitted
+     │  Layer 1: contentHash exact-duplicate check (reverts if seen)
      ▼
-SNS semantic check  ──(similarity ≥ 0.90)──▶  Rejected (bond returned)
-     │ (novel)
-     ▼
-NoveltyGate.submitNoveltyResult()
+NoveltyGate.submitNoveltyResult()  [passthrough — always novel]
      │  status = Pending
      ▼
 ChallengeWindow.openWindow()  [2-hour window]
@@ -88,18 +85,15 @@ ChallengeWindow.openWindow()  [2-hour window]
 
 **Versioning:** A superseded claim stores `nextVersion` and `previousVersion` pointers. No record is ever deleted; stale claims are marked `Superseded` and linked to the corrected claim.
 
-### 3.2 Novelty Detection (`NoveltyGate`, SNS service)
+### 3.2 Novelty Detection (`NoveltyGate` + challenger market)
 
-Two layers guard against duplicate submissions:
+Two mechanisms guard against duplicate submissions:
 
-**Layer 1 — On-chain hash deduplication.** `submitClaim()` reverts immediately if `contentHash` has been seen, at zero bond cost.
+**Layer 1 — On-chain hash deduplication.** `submitClaim()` reverts immediately if `contentHash` has been seen before, at zero bond cost to the protocol.
 
-**Layer 2 — Semantic Novelty Service (SNS).** The off-chain service (Python FastAPI) computes a 384-dimensional sentence-transformer embedding (`all-MiniLM-L6-v2`) for each new claim and queries a Qdrant vector database for the nearest existing claim in the same domain. Cosine similarity ≥ 0.90 triggers rejection; the SNS oracle wallet then calls `NoveltyGate.submitNoveltyResult()` to commit the determination on-chain. The similarity score (in basis points) and nearest claim ID are stored permanently.
+**Layer 2 — Challenger-based paraphrase detection.** Semantic duplicates (paraphrases) are surfaced economically rather than algorithmically. A participant who recognises that a new `Pending` claim restates an existing verified claim can call `challenge()` and cite the prior claim ID as counter-evidence in the dispute vote. The challenger wins the submitter's slashed bond; the duplicate is `Rejected`. This eliminates the centralised SNS oracle wallet and its associated trust assumption, at the cost of a reactive detection window (up to 2 hours). A watchdog bot that auto-challenges known paraphrases is planned for v2.
 
-| Similarity | Outcome |
-|------------|---------|
-| ≥ 0.90 | Rejected — paraphrase duplicate |
-| < 0.90 | Passes — proceeds to challenge window |
+`NoveltyGate.submitNoveltyResult()` is retained in the contract ABI for future use; the backend always submits a passthrough verdict (similarity = 0, no nearest claim) to advance the claim to `Pending`.
 
 ### 3.3 Challenge Window (`ChallengeWindow`)
 
@@ -198,10 +192,9 @@ Three services run under PM2:
 | Port | Service | Stack |
 |------|---------|-------|
 | 3000 | REST API | Node.js / Express (TypeScript) |
-| 8000 | Semantic Novelty Service | Python 3.11 / FastAPI + Qdrant |
 | 42069 | Event Indexer | Ponder 0.7 (TypeScript) |
 
-The REST API (`backend/`) exposes `POST /claims` (submit a claim end-to-end: escrow → SNS → on-chain) and `GET /claims/:id` (fetch current state). The SNS service (`services/sns/`) exposes `/novelty/check` and `/novelty/embed`; it uses `all-MiniLM-L6-v2` for embeddings and a local Qdrant instance for vector search. The Ponder indexer listens for on-chain events and writes indexed state (claims, challenge windows, vote records, emissions) to a local PGlite database, serving GraphQL queries on port 42069.
+The REST API (`backend/`) exposes `POST /claims` (submit a claim end-to-end: escrow → NoveltyGate passthrough → `openWindow()`) and `GET /claims/:id` (fetch current state). The Ponder indexer listens for on-chain events and writes indexed state (claims, challenge windows, vote records, emissions) to a local PGlite database, serving GraphQL queries on port 42069.
 
 ### 4.3 Role Access Control
 
@@ -213,7 +206,7 @@ All privileged functions are gated by OpenZeppelin `AccessControl`. Critical rol
 | `NOVELTY_GATE_ROLE` | NoveltyGate | `recordNoveltyResult()` on ClaimRegistry |
 | `INTERNAL_VOTE_ROLE` | InternalVote | `executeResolution()` on OracleRouter |
 | `VOTER_ROLE` | Registered voters | `castVote()` on InternalVote |
-| `SNS_ORACLE_ROLE` | SNS service wallet | `submitNoveltyResult()` on NoveltyGate |
+| `SNS_ORACLE_ROLE` | Relay wallet | `submitNoveltyResult()` on NoveltyGate (passthrough; SNS oracle removed) |
 
 ---
 
@@ -223,15 +216,15 @@ Two end-to-end test scripts validate both lifecycle paths on live Base Sepolia:
 
 ### 5.1 Unchallenged Path (`scripts/test/e2e-claim.sh`)
 
-Tests the happy path: submit → SNS novelty check → Pending → keeper finalises window → Verified.
+Tests the happy path: submit → NoveltyGate passthrough → Pending → keeper finalises window → Verified.
 
 **Result: 7/7 PASS** (commit `8b644d9`)
 
 | Step | Check |
 |------|-------|
-| 1 | Services healthy (backend, SNS, Ponder) |
+| 1 | Services healthy (backend, Ponder) |
 | 2 | Claim submitted, `ClaimSubmitted` event emitted, bond locked |
-| 3 | SNS novelty check returns `passed = true`, `NoveltyResult` indexed |
+| 3 | Backend pushes claim to `Pending` via `NoveltyGate` passthrough; `NoveltyResult` indexed |
 | 4 | `WindowOpened` event emitted, challenge window active |
 | 5 | Keeper calls `finalizeUnchallenged()` after window expires |
 | 6 | Backend API returns status = `Verified` |
@@ -247,7 +240,7 @@ Tests the full dispute branch: submit → Pending → `challenge()` → Disputed
 |------|--------|
 | 0 — Pre-flight | Services healthy, VOTER_ROLE granted, quorumWeight = 1 |
 | 1 — USDC balance | Challenger wallet holds ≥ 1 USDC |
-| 2 — Submit claim | Claim submitted; SNS passes; window opened |
+| 2 — Submit claim | Claim submitted; NoveltyGate passthrough; window opened |
 | 3 — Challenge | USDC approved; `challenge()` called; status = `Disputed` |
 | 4 — Vote | `openVote()` → `castVote()` → `finalizeVote()` all succeed |
 | 5 — Resolution | `executeResolution()` sets final status; bond settled |
@@ -270,7 +263,7 @@ Notable issues resolved during testing:
 
 **Sequencer risk.** Base uses a centralised sequencer (standard for OP Stack L2s). A sequencer outage affects liveness but not safety — state is committed to L1, and the challenge window timer is based on `block.timestamp`, which pauses with the chain. L1 force-inclusion is available as a fallback.
 
-**Oracle trust.** The SNS oracle wallet and VOTER_ROLE holders are trusted in v1. Production deployment moves to threshold multisig for the SNS oracle and commit-reveal + VRF jury selection for voters, eliminating single-wallet trust.
+**Oracle trust.** VOTER_ROLE holders are trusted in v1. Production deployment moves to commit-reveal + VRF jury selection for voters, eliminating single-wallet trust. The SNS oracle wallet is no longer a trust assumption; duplicate detection is fully decentralised via the challenger market.
 
 ---
 
@@ -286,6 +279,7 @@ Notable issues resolved during testing:
 | Flash / Deep verification tiers | Deferred | Governance-activatable |
 | Gnosis Safe multisig | Mainnet only | Treasury uses EOA on testnet |
 | Anti-Sybil voter credentials | Deferred | EAS attestations planned for domain expertise proofs |
+| Paraphrase detection latency | By design | Challenger-based detection is reactive; a duplicate may sit `Pending` for up to 2 hours before being challenged. A watchdog bot that auto-challenges known paraphrases is planned for v2. |
 
 The most significant limitation is the single-voter quorum used on testnet. Production will require ≥ 15 randomly-selected voters from a PLOT-staked domain pool before a vote can finalise.
 
@@ -293,7 +287,7 @@ The most significant limitation is the single-voter quorum used on testnet. Prod
 
 ## 8. Conclusion
 
-Plot Protocol demonstrates that economic incentives alone — without a standing reviewer workforce or trusted AI system — can enforce factual claim quality at scale. The optimistic challenge model keeps costs near-zero for true claims while making false claims expensive to publish. Semantic novelty detection prevents the paraphrase flooding that would otherwise saturate the challenge queue. All 13 contracts are live on Base Sepolia; both claim paths (unchallenged and adversarial dispute) pass end-to-end validation on a live testnet.
+Plot Protocol demonstrates that economic incentives alone — without a standing reviewer workforce or trusted AI system — can enforce factual claim quality at scale. The optimistic challenge model keeps costs near-zero for true claims while making false claims expensive to publish. The same challenger market that polices factual error also surfaces paraphrase duplicates, eliminating a dedicated novelty oracle and the trust assumptions it carried. All 13 contracts are live on Base Sepolia; both claim paths (unchallenged and adversarial dispute) pass end-to-end validation on a live testnet.
 
 The next production milestones are commit-reveal voting, Chainlink VRF jury selection, and UMA escalation — features that increase the protocol's adversarial robustness without changing the core bond-and-challenge economic model.
 
@@ -305,6 +299,4 @@ The next production milestones are commit-reveal voting, Chainlink VRF jury sele
 2. OpenZeppelin Contracts 5.x — AccessControl, Governor, ERC20Votes. https://docs.openzeppelin.com/contracts/5.x  
 3. Base L2 Documentation. *Base by Coinbase*. https://docs.base.org  
 4. Ponder — Event Indexing for Ethereum. https://ponder.sh  
-5. Qdrant Vector Database. https://qdrant.tech/documentation  
-6. Reimers, N. & Gurevych, I. (2019). *Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks*. EMNLP 2019.  
-7. Attah, A. & Szabo, N. (1997). *Formalizing and Securing Relationships on Public Networks*. First Monday, 2(9).
+5. Attah, A. & Szabo, N. (1997). *Formalizing and Securing Relationships on Public Networks*. First Monday, 2(9).
