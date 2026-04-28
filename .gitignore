@@ -1,14 +1,18 @@
 .env*
-.env.example
+!.env.example
 
 # Ponder indexer runtime data
 indexer/.ponder/
-indexer/.observer.lock
-.observer.lock
+indexer/generated/
+indexer/ponder-env.d.ts
+
+# Observer lock files (all locations)
+*.observer.lock
 
 # Node / Bun
 node_modules/
 dist/
+coverage/
 
 # Python
 __pycache__/
@@ -20,3 +24,16 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/**/dry-run/
 services/sns/.reqs_hash
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude local settings
+.claude/settings.local.json
