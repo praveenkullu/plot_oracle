@@ -111,7 +111,7 @@ echo "=== [2/4] Submitting test claim ==="
 TIMESTAMP=$(date +%s)
 CLAIM_TEXT="Test claim submitted by e2e-claim.sh at ${TIMESTAMP}. The boiling point of water at sea level is 100 degrees Celsius."
 
-response=$(curl -fsS --max-time 30 \
+response=$(curl -fsS --max-time 120 \
   -X POST "$API_URL/claims" \
   -H "Content-Type: application/json" \
   -d "{

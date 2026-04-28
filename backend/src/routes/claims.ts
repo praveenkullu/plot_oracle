@@ -61,17 +61,18 @@ router.post('/', async (req: Request, res: Response) => {
       await approveTx.wait();
     }
 
-    // 4b. Submit claim on-chain
+    // 4b. Submit claim on-chain; wait 2 confirmations so all RPC nodes see the state
     const tx = await claimRegistry.submitClaim(contentHash, domainCode, complexityBps, ethers.ZeroHash);
-    const receipt = await tx.wait();
+    const receipt = await tx.wait(2);
     const submittedEvent = receipt?.logs
       .map((log: { topics: string[]; data: string }) => { try { return claimRegistry.interface.parseLog(log); } catch { return null; } })
       .find((e: { name: string } | null) => e?.name === 'ClaimSubmitted');
     const claimId: string = (submittedEvent?.args?.claimId as string) ?? contentHash;
 
     // 5. NoveltyGate passthrough (always novel) + open challenge window
+    // wait(2) on each tx so RPC nodes are consistent before the next call
     const noTx = await noveltyGate.submitNoveltyResult(claimId, 0, ethers.ZeroHash, ethers.ZeroHash);
-    await noTx.wait();
+    await noTx.wait(2);
     const owTx = await challengeWindow.openWindow(claimId);
     await owTx.wait();
 

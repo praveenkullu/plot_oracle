@@ -129,7 +129,7 @@ echo "=== [2/6] Submitting test claim ==="
 TIMESTAMP=$(date +%s)
 CLAIM_TEXT="Adversarial dispute test ${TIMESTAMP}: claim text for e2e dispute path validation."
 
-response=$(curl -fsS --max-time 30 \
+response=$(curl -fsS --max-time 120 \
   -X POST "$API_URL/claims" \
   -H "Content-Type: application/json" \
   -d "{
