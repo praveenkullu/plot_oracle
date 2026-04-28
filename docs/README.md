@@ -11,7 +11,7 @@ a tamper-proof archive of verified claims.
 Read in this order:
 1. **[Architecture Overview](#architecture-overview)** below — understand the big picture
 2. **[Module 1: Core Data Model](modules/01-core-data-model.md)** — the foundation every other module builds on
-3. **[Module 2: Novelty Detection](modules/02-novelty-detection.md)** — how duplicate/similar claims are filtered
+3. (disabled)**[Module 2: Novelty Detection](modules/02-novelty-detection.md)** — how duplicate/similar claims are filtered
 4. **[Module 3: Challenge Window](modules/03-challenge-window.md)** — the optimistic challenge mechanism
 5. **[Module 4: Oracle Router & Voting](modules/04-oracle-router.md)** — dispute resolution and voting
 6. **[Module 5: Confidence Scoring](modules/05-confidence-scoring.md)** — how trust scores are computed
