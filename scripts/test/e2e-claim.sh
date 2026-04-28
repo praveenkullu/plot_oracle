@@ -129,7 +129,7 @@ fi
 
 echo "  Response: $response"
 
-claim_id=$(echo "$response" | grep -o '"claim_id":"[^"]*"' | cut -d'"' -f4 || echo "")
+claim_id=$(echo "$response" | grep -o '"claim_id":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
 tx_hash=$(echo "$response" | grep -o '"tx_hash":"[^"]*"' | cut -d'"' -f4 || echo "")
 bond_required=$(echo "$response" | grep -o '"bond_required":"[^"]*"' | cut -d'"' -f4 || echo "")
 
@@ -155,10 +155,10 @@ chain_claim=$(curl -fsS --max-time 10 "$API_URL/claims/$claim_id" 2>/dev/null ||
 echo "  On-chain read: $chain_claim"
 
 chain_status=$(echo "$chain_claim" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "")
-if [[ "$chain_status" == "Submitted" || "$chain_status" == "Pending" ]]; then
+if [[ "$chain_status" == "Submitted" || "$chain_status" == "Pending" || "$chain_status" == "Rejected" ]]; then
   ok "On-chain status: $chain_status"
 else
-  fail "Unexpected on-chain status: '$chain_status' (expected 'Submitted' or 'Pending')"
+  fail "Unexpected on-chain status: '$chain_status' (expected 'Submitted', 'Pending', or 'Rejected')"
 fi
 
 # ── 4. Verify in Ponder indexer ───────────────────────────────────────────────

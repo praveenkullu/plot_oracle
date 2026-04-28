@@ -21,42 +21,35 @@ ponder.on("ClaimRegistry:ClaimSubmitted", async ({ event, context }) => {
 
 ponder.on("ClaimRegistry:StatusChanged", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
-    .set({ status: STATUS_NAMES[event.args.newStatus] ?? "Unknown" })
-    .where(eq(schema.claim.id, event.args.claimId));
+    .update(schema.claim, { id: event.args.claimId })
+    .set({ status: STATUS_NAMES[event.args.newStatus] ?? "Unknown" });
 });
 
 ponder.on("ClaimRegistry:NoveltyResult", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
-    .set({ noveltyPassed: event.args.passed })
-    .where(eq(schema.claim.id, event.args.claimId));
+    .update(schema.claim, { id: event.args.claimId })
+    .set({ noveltyPassed: event.args.passed });
 });
 
 ponder.on("ClaimRegistry:ConfidenceScoreSet", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
-    .set({ confidenceScore: event.args.score })
-    .where(eq(schema.claim.id, event.args.claimId));
+    .update(schema.claim, { id: event.args.claimId })
+    .set({ confidenceScore: event.args.score });
 });
 
 ponder.on("ClaimRegistry:DomainFinalized", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
-    .set({ voterAssignedDomain: event.args.voterAssignedDomain, domainFinalized: true })
-    .where(eq(schema.claim.id, event.args.claimId));
+    .update(schema.claim, { id: event.args.claimId })
+    .set({ voterAssignedDomain: event.args.voterAssignedDomain, domainFinalized: true });
 });
 
 ponder.on("ClaimRegistry:ClaimSuperseded", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
-    .set({ nextVersion: event.args.newClaimId })
-    .where(eq(schema.claim.id, event.args.oldClaimId));
-  // New claim row is created by the ClaimSubmitted event; just set its previousVersion
+    .update(schema.claim, { id: event.args.oldClaimId })
+    .set({ nextVersion: event.args.newClaimId });
   await context.db
-    .update(schema.claim)
-    .set({ previousVersion: event.args.oldClaimId })
-    .where(eq(schema.claim.id, event.args.newClaimId));
+    .update(schema.claim, { id: event.args.newClaimId })
+    .set({ previousVersion: event.args.oldClaimId });
 });
 
 // ── ChallengeWindow ───────────────────────────────────────────────────────────
@@ -72,28 +65,25 @@ ponder.on("ChallengeWindow:WindowOpened", async ({ event, context }) => {
 
 ponder.on("ChallengeWindow:ChallengeOpened", async ({ event, context }) => {
   await context.db
-    .update(schema.challengeWindow)
-    .set({ challenger: event.args.challenger, challengerBond: event.args.bond })
-    .where(eq(schema.challengeWindow.id, event.args.claimId));
+    .update(schema.challengeWindow, { id: event.args.claimId })
+    .set({ challenger: event.args.challenger, challengerBond: event.args.bond });
 });
 
 ponder.on("ChallengeWindow:WindowExpired", async ({ event, context }) => {
   await context.db
-    .update(schema.challengeWindow)
-    .set({ finalized: true })
-    .where(eq(schema.challengeWindow.id, event.args.claimId));
+    .update(schema.challengeWindow, { id: event.args.claimId })
+    .set({ finalized: true });
 });
 
 // ── OracleRouter ─────────────────────────────────────────────────────────────
 
 ponder.on("OracleRouter:DisputeResolved", async ({ event, context }) => {
   await context.db
-    .update(schema.claim)
+    .update(schema.claim, { id: event.args.claimId })
     .set({
       status: event.args.verified ? "Verified" : "Rejected",
       confidenceScore: event.args.score,
-    })
-    .where(eq(schema.claim.id, event.args.claimId));
+    });
 });
 
 // ── InternalVote ─────────────────────────────────────────────────────────────
@@ -117,27 +107,24 @@ ponder.on("InternalVote:VoteCast", async ({ event, context }) => {
 
   if (event.args.support) {
     await context.db
-      .update(schema.voteRecord)
-      .set({ weightFor: existing.weightFor + event.args.weight })
-      .where(eq(schema.voteRecord.id, event.args.claimId));
+      .update(schema.voteRecord, { id: event.args.claimId })
+      .set({ weightFor: existing.weightFor + event.args.weight });
   } else {
     await context.db
-      .update(schema.voteRecord)
-      .set({ weightAgainst: existing.weightAgainst + event.args.weight })
-      .where(eq(schema.voteRecord.id, event.args.claimId));
+      .update(schema.voteRecord, { id: event.args.claimId })
+      .set({ weightAgainst: existing.weightAgainst + event.args.weight });
   }
 });
 
 ponder.on("InternalVote:VoteFinalized", async ({ event, context }) => {
   await context.db
-    .update(schema.voteRecord)
+    .update(schema.voteRecord, { id: event.args.claimId })
     .set({
       weightFor: event.args.weightFor,
       weightAgainst: event.args.weightAgainst,
       finalized: true,
       verified: event.args.verified,
-    })
-    .where(eq(schema.voteRecord.id, event.args.claimId));
+    });
 });
 
 // ── EmissionController ────────────────────────────────────────────────────────
